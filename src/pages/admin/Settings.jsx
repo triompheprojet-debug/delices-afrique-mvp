@@ -1,162 +1,212 @@
-import React, { useState } from 'react';
-import { Save, Store, Clock, Phone, MapPin, Globe, Power, Palette } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { 
+  Save, 
+  Clock, 
+  Power, 
+  Smartphone, 
+  MapPin, 
+  Globe, 
+  MessageSquare,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
 
 const Settings = () => {
-  // État local pour simuler la sauvegarde des paramètres
-  const [settings, setSettings] = useState({
-    siteName: "Délices d'Afrique",
-    phone: "06 123 45 67",
-    whatsapp: "06 123 45 67",
-    address: "Avenue de la Paix, Pointe-Noire",
-    email: "contact@delices-afrique.com",
-    isStoreOpen: true, // Pour gérer la fermeture temporaire 
-    closingMessage: "Nous sommes actuellement fermés pour travaux. Réouverture lundi !",
-    socials: {
-      facebook: "https://facebook.com/delices",
-      instagram: "https://instagram.com/delices"
-    }
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // État initial du formulaire
+  const [config, setConfig] = useState({
+    openingTime: '08:00',
+    closingTime: '22:00',
+    isShopOpen: true, // Si false, le site est fermé manuellement
+    phoneNumber: '+242 06 000 0000',
+    address: 'Centre Ville, Pointe-Noire',
+    bannerMessage: 'Bienvenue chez nous !', // Message défilant ou titre
+    maintenanceMode: false // Si true, site inaccessible
   });
 
-  // Gestion des horaires (simplifiée pour le prototype) 
-  const [hours, setHours] = useState([
-    { day: 'Lundi', open: '07:30', close: '19:00', closed: false },
-    { day: 'Mardi', open: '07:30', close: '19:00', closed: false },
-    { day: 'Mercredi', open: '07:30', close: '19:00', closed: false },
-    { day: 'Jeudi', open: '07:30', close: '19:00', closed: false },
-    { day: 'Vendredi', open: '07:30', close: '19:00', closed: false },
-    { day: 'Samedi', open: '08:00', close: '20:00', closed: false },
-    { day: 'Dimanche', open: '', close: '', closed: true }, // 
-  ]);
+  // 1. Charger les configurations au démarrage
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, "settings", "config");
+        const docSnap = await getDoc(docRef);
 
-  const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setSettings({ ...settings, [e.target.name]: value });
-  };
+        if (docSnap.exists()) {
+          setConfig({ ...config, ...docSnap.data() });
+        } else {
+          // Si le document n'existe pas encore, on le crée avec les valeurs par défaut
+          await setDoc(docRef, config);
+        }
+      } catch (error) {
+        console.error("Erreur chargement settings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleSave = (e) => {
+    fetchSettings();
+  }, []);
+
+  // 2. Sauvegarder les modifications
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert("Paramètres sauvegardés avec succès ! (Simulation)");
+    setSaving(true);
+    setSuccessMsg('');
+
+    try {
+      const docRef = doc(db, "settings", "config");
+      await setDoc(docRef, config);
+      
+      setSuccessMsg('Paramètres mis à jour avec succès !');
+      setTimeout(() => setSuccessMsg(''), 3000); // Effacer message après 3s
+    } catch (error) {
+      console.error("Erreur sauvegarde:", error);
+      alert("Erreur lors de la sauvegarde.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return <div className="p-10 text-center">Chargement des paramètres...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
-      
-      {/* En-tête */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Paramètres du site</h1>
-          <p className="text-gray-500">Gérez les informations visibles par vos clients.</p>
-        </div>
-        <button 
-          onClick={handleSave}
-          className="bg-brand-brown hover:bg-brand-beige text-white px-6 py-3 rounded-lg flex items-center gap-2 transition shadow-lg"
-        >
-          <Save size={20} />
-          Enregistrer les modifications
-        </button>
-      </div>
+    <div className="pb-20 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <Globe className="text-brand-brown"/> Configuration du Site
+      </h1>
 
-      <div className="space-y-8">
-
-        {/* 1. Identité & Contact */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-brand-brown mb-4 flex items-center gap-2">
-            <Store size={20} /> Identité de la Pâtisserie
+      <form onSubmit={handleSave} className="space-y-6">
+        
+        {/* --- SECTION 1 : ÉTAT & HORAIRES --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-blue-600"/> Disponibilité
           </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Nom de l'établissement</label>
-              <input type="text" name="siteName" value={settings.siteName} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Email de contact</label>
-              <input type="email" name="email" value={settings.email} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2"><Phone size={14}/> Téléphone (Affiché sur le site)</label>
-              <input type="text" name="phone" value={settings.phone} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2"><Globe size={14}/> Numéro WhatsApp</label>
-              <input type="text" name="whatsapp" value={settings.whatsapp} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2"><MapPin size={14}/> Adresse complète</label>
-              <input type="text" name="address" value={settings.address} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none" />
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Horaires d'ouverture */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-brand-brown mb-4 flex items-center gap-2">
-            <Clock size={20} /> Horaires d'ouverture
-          </h2>
-          <div className="grid gap-3">
-            {hours.map((h, index) => (
-              <div key={index} className="flex items-center gap-4 text-sm">
-                <span className="w-24 font-bold text-gray-700">{h.day}</span>
-                {h.closed ? (
-                  <span className="text-red-500 font-bold bg-red-50 px-3 py-1 rounded">Fermé</span>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input type="time" defaultValue={h.open} className="border border-gray-300 rounded p-1" />
-                    <span>à</span>
-                    <input type="time" defaultValue={h.close} className="border border-gray-300 rounded p-1" />
-                  </div>
-                )}
-                {/* Toggle Fermé (simulé) */}
-                <label className="flex items-center gap-2 ml-auto cursor-pointer">
-                  <input type="checkbox" checked={h.closed} readOnly className="rounded text-brand-brown" />
-                  <span className="text-xs text-gray-400">Fermé ce jour</span>
-                </label>
+            {/* Switch Ouverture Manuelle */}
+            <div className={`border p-4 rounded-xl flex items-center justify-between cursor-pointer transition ${config.isShopOpen ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+              <div>
+                <span className="font-bold block text-gray-800">État de la boutique</span>
+                <span className="text-xs text-gray-500">{config.isShopOpen ? 'Actuellement OUVERT' : 'Actuellement FERMÉ (Force)'}</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. État du site (Ouvert/Fermé) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-brand-brown mb-4 flex items-center gap-2">
-            <Power size={20} /> État du site
-          </h2>
-          
-          <div className="flex items-center justify-between mb-4 bg-gray-50 p-4 rounded-lg">
-            <div>
-              <h3 className="font-bold text-gray-800">Mode "Commandes Ouvertes"</h3>
-              <p className="text-xs text-gray-500">Si désactivé, les clients verront un message de fermeture.</p>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={config.isShopOpen} 
+                  onChange={(e) => setConfig({...config, isShopOpen: e.target.checked})} 
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
             </div>
-            <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-              <input type="checkbox" name="isStoreOpen" checked={settings.isStoreOpen} onChange={handleChange} className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-green-400"/>
-              <label className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${settings.isStoreOpen ? 'bg-green-400' : 'bg-gray-300'}`}></label>
+
+            {/* Switch Maintenance */}
+            <div className={`border p-4 rounded-xl flex items-center justify-between cursor-pointer transition ${config.maintenanceMode ? 'border-orange-200 bg-orange-50' : 'border-gray-200'}`}>
+              <div>
+                <span className="font-bold block text-gray-800 flex items-center gap-1">Mode Maintenance <AlertTriangle size={14} className="text-orange-500"/></span>
+                <span className="text-xs text-gray-500">Bloque l'accès au site client</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={config.maintenanceMode} 
+                  onChange={(e) => setConfig({...config, maintenanceMode: e.target.checked})} 
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              </label>
             </div>
           </div>
 
-          {!settings.isStoreOpen && (
-             <div className="animate-fade-in-down">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Message de fermeture temporaire</label>
-                <textarea name="closingMessage" value={settings.closingMessage} onChange={handleChange} rows="2" className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-beige outline-none bg-yellow-50"></textarea>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+             <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Heure d'ouverture</label>
+                <input 
+                  type="time" 
+                  value={config.openingTime} 
+                  onChange={(e) => setConfig({...config, openingTime: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50"
+                />
              </div>
-          )}
+             <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Heure de fermeture</label>
+                <input 
+                  type="time" 
+                  value={config.closingTime} 
+                  onChange={(e) => setConfig({...config, closingTime: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50"
+                />
+             </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2 italic">Ces horaires peuvent être utilisés pour afficher automatiquement "Fermé" sur le site.</p>
         </div>
 
-        {/* 4. Apparence (Couleurs) - Optionnel */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 opacity-70 pointer-events-none">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-bold text-brand-brown flex items-center gap-2">
-              <Palette size={20} /> Thème & Couleurs (Option Pro)
-            </h2>
-            <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded">Bientôt disponible</span>
-          </div>
-          <p className="text-sm text-gray-500 mb-4">Personnalisez les couleurs du site pour coller à votre marque.</p>
-          <div className="flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#5D4037] border-2 border-gray-200 cursor-pointer ring-2 ring-offset-2 ring-blue-500"></div>
-            <div className="w-10 h-10 rounded-full bg-[#E63946] border-2 border-gray-200 cursor-pointer"></div>
-            <div className="w-10 h-10 rounded-full bg-[#2A9D8F] border-2 border-gray-200 cursor-pointer"></div>
+        {/* --- SECTION 2 : INFORMATIONS PUBLIQUES --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Smartphone size={20} className="text-brand-brown"/> Coordonnées & Affichage
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+               <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1"><Smartphone size={16}/> Téléphone Public</label>
+               <input 
+                 type="text" 
+                 value={config.phoneNumber} 
+                 onChange={(e) => setConfig({...config, phoneNumber: e.target.value})}
+                 className="w-full border border-gray-300 rounded-lg p-3"
+                 placeholder="+242..."
+               />
+            </div>
+            
+            <div>
+               <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1"><MapPin size={16}/> Adresse Boutique</label>
+               <input 
+                 type="text" 
+                 value={config.address} 
+                 onChange={(e) => setConfig({...config, address: e.target.value})}
+                 className="w-full border border-gray-300 rounded-lg p-3"
+                 placeholder="Adresse complète"
+               />
+            </div>
+
+            <div>
+               <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1"><MessageSquare size={16}/> Message d'annonce (Bannière)</label>
+               <input 
+                 type="text" 
+                 value={config.bannerMessage} 
+                 onChange={(e) => setConfig({...config, bannerMessage: e.target.value})}
+                 className="w-full border border-gray-300 rounded-lg p-3"
+                 placeholder="Ex: Promo -20% ce weekend !"
+               />
+            </div>
           </div>
         </div>
 
-      </div>
+        {/* --- BOUTON SAUVEGARDER --- */}
+        <div className="sticky bottom-4">
+           {successMsg && (
+             <div className="mb-4 bg-green-100 text-green-800 p-4 rounded-xl flex items-center gap-2 animate-bounce">
+                <CheckCircle size={20}/> {successMsg}
+             </div>
+           )}
+           
+           <button 
+             type="submit" 
+             disabled={saving}
+             className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-xl hover:bg-gray-800 transition flex items-center justify-center gap-2"
+           >
+             {saving ? 'Enregistrement...' : <><Save size={20}/> Enregistrer les paramètres</>}
+           </button>
+        </div>
+
+      </form>
     </div>
   );
 };

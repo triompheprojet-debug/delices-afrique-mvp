@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Star, ChefHat, Clock, Truck, CheckCircle, ShoppingBag } from 'lucide-react';
 import ProductList from '../../components/client/ProductList';
 
+
 const Home = () => {
   return (
     <div className="font-sans">

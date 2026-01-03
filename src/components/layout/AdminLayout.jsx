@@ -1,83 +1,132 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, ClipboardList, Settings, LogOut, Store } from 'lucide-react';
+import React, { useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  ShoppingBag, 
+  Package, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X,
+  ChefHat
+} from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase';
 
 const AdminLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Liste des liens du menu admin
-  const menuItems = [
-    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
-    { path: '/admin/orders', icon: ClipboardList, label: 'Commandes' },
-    { path: '/admin/products', icon: ShoppingBag, label: 'Produits' },
-    { path: '/admin/settings', icon: Settings, label: 'Paramètres' },
+  // Fonction de déconnexion
+  const handleLogout = async () => {
+    if (window.confirm("Voulez-vous vraiment vous déconnecter ?")) {
+      await signOut(auth);
+      navigate('/login');
+    }
+  };
+
+  // Liens de navigation
+  const navItems = [
+    { path: '/admin/dashboard', label: 'Tableau de bord', icon: <LayoutDashboard size={20} /> },
+    { path: '/admin/orders', label: 'Commandes', icon: <ShoppingBag size={20} /> },
+    { path: '/admin/products', label: 'Produits', icon: <Package size={20} /> }, // Note le nom "Produits" ici
+    { path: '/admin/settings', label: 'Paramètres', icon: <Settings size={20} /> },
   ];
 
+  // Composant Lien pour éviter la répétition
+  const NavLink = ({ item }) => {
+    const isActive = location.pathname === item.path;
+    return (
+      <Link
+        to={item.path}
+        onClick={() => setIsSidebarOpen(false)} // Ferme le menu sur mobile au clic
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium mb-1 ${
+          isActive 
+            ? 'bg-brand-brown text-white shadow-lg' 
+            : 'text-gray-600 hover:bg-brand-beige/20 hover:text-brand-brown'
+        }`}
+      >
+        {item.icon}
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
       
-      {/* --- SIDEBAR GAUCHE --- */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col shadow-xl">
-        {/* Logo Admin */}
-        <div className="p-6 border-b border-gray-800">
-          <h2 className="text-xl font-bold font-serif text-brand-beige">Admin Panel</h2>
-          <p className="text-xs text-gray-500 mt-1">Délices d'Afrique</p>
+      {/* --- SIDEBAR MOBILE (Overlay + Menu) --- */}
+      {/* Fond sombre quand le menu est ouvert sur mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Le Menu Latéral lui-même */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0 
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Logo / Header Sidebar */}
+        <div className="h-20 flex items-center justify-center border-b border-gray-100">
+          <div className="flex items-center gap-2 text-brand-brown font-serif font-bold text-xl">
+            <ChefHat />
+            <span>Admin Panel</span>
+          </div>
+          {/* Bouton fermer sur mobile uniquement */}
+          <button 
+            onClick={() => setIsSidebarOpen(false)} 
+            className="absolute right-4 top-6 text-gray-400 md:hidden"
+          >
+            <X size={24} />
+          </button>
         </div>
 
-        {/* Menu de Navigation */}
-        <nav className="flex-1 py-6 px-3 space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                  ${isActive 
-                    ? 'bg-brand-red text-white shadow-lg' 
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                  }
-                `}
-              >
-                <Icon size={20} />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
+        {/* Navigation Links */}
+        <nav className="p-4 space-y-2 overflow-y-auto flex-1">
+          {navItems.map((item) => (
+            <NavLink key={item.path} item={item} />
+          ))}
         </nav>
 
-        {/* Pied de Sidebar */}
-        <div className="p-4 border-t border-gray-800 space-y-2">
-          <Link to="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm px-4 py-2">
-            <Store size={16} /> Voir le site
-          </Link>
-          <button className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm px-4 py-2 w-full text-left">
-            <LogOut size={16} /> Déconnexion
+        {/* Pied de page Sidebar (Déconnexion) */}
+        <div className="p-4 border-t border-gray-100">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full text-left text-red-600 hover:bg-red-50 rounded-xl transition font-medium"
+          >
+            <LogOut size={20} />
+            <span>Déconnexion</span>
           </button>
         </div>
       </aside>
 
+
       {/* --- CONTENU PRINCIPAL --- */}
-      <main className="flex-1 overflow-y-auto">
-        <header className="bg-white shadow-sm py-4 px-8 flex justify-between items-center sticky top-0 z-10">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {menuItems.find(i => i.path === location.pathname)?.label || 'Administration'}
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-8 bg-brand-brown rounded-full text-white flex items-center justify-center font-bold">
-              A
-            </div>
-            <span className="text-sm text-gray-600 font-medium">Admin Principal</span>
-          </div>
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        
+        {/* Header Mobile (Visible uniquement sur petits écrans) */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:hidden flex-shrink-0">
+          <span className="font-bold text-gray-800">Menu Administration</span>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu size={24} />
+          </button>
         </header>
 
-        <div className="p-8">
-          <Outlet /> {/* C'est ici que s'afficheront Dashboard, Produits, etc. */}
-        </div>
-      </main>
+        {/* Zone de Contenu (C'est ici que s'affichent Dashboard, Orders, etc.) */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-8">
+          {/* Outlet affiche le composant de la route enfant */}
+          <Outlet />
+        </main>
+
+      </div>
     </div>
   );
 };

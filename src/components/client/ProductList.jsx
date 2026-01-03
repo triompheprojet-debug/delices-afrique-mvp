@@ -1,6 +1,6 @@
 import React from 'react';
 import ProductCard from './ProductCard';
-import productsData from '../../data/products.json';
+import productsData from '../../data/products.json'; 
 
 const ProductList = ({ category, limit }) => {
   

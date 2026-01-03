@@ -1,40 +1,57 @@
 import React, { createContext, useState, useContext } from 'react';
 
 const CartContext = createContext();
-
-// Hook personnalisé pour l'utiliser facilement
 export const useCart = () => useContext(CartContext);
 
-// Fournisseur de Contexte
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]); // Tableau des produits dans le panier
+  const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Fonction pour ajouter un produit
+  // Ajout produit (SANS ouvrir le panier automatiquement)
   const addToCart = (product) => {
-    // Dans ce prototype, on ajoute un produit simple (on n'implémente pas l'incrémentation pour aller vite)
-    setCartItems(prevItems => [...prevItems, { 
-      ...product, 
-      quantity: 1, 
-      cartId: Date.now() // ID unique pour chaque ajout dans le proto
-    }]);
-    setIsCartOpen(true); // Ouvre le panier visuel après ajout
+    setCartItems(prevItems => {
+      // Vérifie si le produit existe déjà pour éviter les doublons
+      const existingItem = prevItems.find(item => item.id === product.id);
+      if (existingItem) {
+        return prevItems.map(item => 
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevItems, { ...product, quantity: 1, cartId: Date.now() }];
+    });
+    // J'ai supprimé la ligne setIsCartOpen(true); ICI
   };
 
-  // Fonction pour calculer le total
+  // Modifier la quantité (+ ou -)
+  const updateQuantity = (productId, delta) => {
+    setCartItems(prevItems => prevItems.map(item => {
+      if (item.id === productId) {
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }));
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  };
+
+  const clearCart = () => setCartItems([]);
+
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  
-  // Nombre d'articles (dans le badge du Header)
-  const cartCount = cartItems.length;
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const value = {
     cartItems,
     addToCart,
+    removeFromCart,
+    updateQuantity, // Nouvelle fonction exportée
+    clearCart,
     cartTotal,
     cartCount,
     isCartOpen,
     setIsCartOpen,
-    // (Ajouter remove, updateQuantity plus tard si besoin)
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
