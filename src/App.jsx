@@ -6,6 +6,7 @@ import Home from './pages/client/Home';
 import Menu from './pages/client/Menu';
 import Contact from './pages/client/Contact';
 import Checkout from './pages/client/Checkout';
+import Confirmation from './pages/client/Confirmation';
 
 
 
@@ -31,6 +32,7 @@ function App() {
                 <Route path="menu" element={<Menu />} />
                 <Route path="contact" element={<Contact />} />
                 <Route path="checkout" element={<Checkout />} />
+                <Route path="confirmation" element={<Confirmation />} />
               </Route>
 
               {/* Routes Admin (Nouvelle section) */}

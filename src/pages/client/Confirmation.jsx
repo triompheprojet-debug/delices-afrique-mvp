@@ -1,55 +1,133 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle, Calendar, MapPin, Phone } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle, Printer, Home, MapPin, Calendar, Clock, Phone, ArrowRight } from 'lucide-react';
 
 const Confirmation = () => {
-  // Numéro de commande fictif pour le prototype 
-  const orderId = "CMD-" + Math.floor(100000 + Math.random() * 900000);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // On récupère les données envoyées depuis Checkout
+  const order = location.state?.order;
+
+  // Sécurité : Si quelqu'un accède à cette page sans passer par une commande, on le renvoie à l'accueil
+  useEffect(() => {
+    if (!order) {
+      navigate('/');
+    }
+  }, [order, navigate]);
+
+  if (!order) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border-t-8 border-brand-green">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden relative">
         
-        {/* Message de Succès */}
-        <div className="flex justify-center mb-6">
-          <CheckCircle size={80} className="text-brand-green animate-bounce" />
-        </div>
+        {/* Décoration Haut (Effet Ticket découpé) */}
+        <div className="h-2 bg-brand-brown w-full"></div>
         
-        <h1 className="text-3xl font-serif font-bold text-brand-brown mb-2">
-          Merci pour votre commande !
-        </h1>
-        <p className="text-gray-500 mb-8">
-          Votre demande a bien été reçue. Nous allons vous contacter rapidement pour confirmation.
-        </p>
+        <div className="p-8 text-center">
+          {/* Icône Succès */}
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+            <CheckCircle size={40} className="text-green-600" />
+          </div>
 
-        {/* Détails de la preuve */}
-        <div className="bg-gray-50 rounded-xl p-6 text-left mb-8 border border-gray-200">
-          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Numéro de commande</p>
-          <p className="text-2xl font-bold text-brand-brown mb-4">{orderId}</p>
-          
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex items-center gap-3">
-              <Calendar size={18} className="text-brand-beige"/>
-              <span>En attente de confirmation téléphonique</span>
+          <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Commande Reçue !</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Merci {order.customer.name.split(' ')[0]}, nous préparons votre délice.
+          </p>
+
+          {/* --- LE TICKET / RÉCAPITULATIF --- */}
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 text-left relative">
+            {/* Trous de ticket (Déco) */}
+            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-r border-gray-200"></div>
+            <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-l border-gray-200"></div>
+
+            <div className="flex justify-between items-center mb-4 border-b border-dashed border-gray-300 pb-4">
+              <span className="text-gray-400 text-xs uppercase tracking-widest">Code Commande</span>
+              <span className="font-mono font-bold text-xl text-brand-brown">{order.code}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <Phone size={18} className="text-brand-beige"/>
-              <span>Paiement à la livraison / retrait</span>
+
+            {/* Infos Livraison/Retrait */}
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 text-brand-brown"><MapPin size={16}/></div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase">
+                    {order.details.method === 'Livraison' ? 'Livraison à' : 'Retrait boutique'}
+                  </p>
+                  <p className="text-sm font-bold text-gray-800 leading-tight">
+                    {order.details.method === 'Livraison' 
+                      ? order.customer.addressText 
+                      : "À notre boutique principale"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 text-brand-brown"><Calendar size={16}/></div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase">
+                    {order.details.method === 'Livraison' ? 'Date prévue' : 'Date de retrait'}
+                  </p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {new Date(order.details.scheduledDate).toLocaleDateString()} 
+                    <span className="font-normal text-gray-500"> vers </span> 
+                    {order.details.scheduledTime}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Liste Articles (Résumé) */}
+            <div className="bg-white rounded-lg p-3 border border-gray-100 mb-4">
+              <ul className="space-y-2">
+                {order.items.map((item, idx) => (
+                  <li key={idx} className="flex justify-between text-sm">
+                    <span className="text-gray-600"><span className="font-bold text-black">{item.quantity}x</span> {item.name}</span>
+                    <span className="font-medium text-gray-900">{(item.price * item.quantity).toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+              {/* Frais Livraison */}
+              {order.details.deliveryFee > 0 && (
+                <div className="flex justify-between text-sm text-gray-500 mt-2 pt-2 border-t border-gray-100">
+                  <span>Livraison</span>
+                  <span>{order.details.deliveryFee.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between items-center pt-2 border-t-2 border-dashed border-gray-300">
+              <span className="font-bold text-gray-800">Total à payer</span>
+              <span className="text-2xl font-serif font-bold text-brand-brown">
+                {order.details.finalTotal.toLocaleString()} <span className="text-xs">FCFA</span>
+              </span>
             </div>
           </div>
+          
+          <p className="text-xs text-center text-gray-400 mt-4 italic">
+            Un récapitulatif a été envoyé à notre équipe. <br/>
+            Contactez-nous au 06 000 0000 si besoin.
+          </p>
         </div>
 
-        {/* Message Important */}
-        <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-8">
-          ⚠️ Veuillez conserver ce numéro ou faire une capture d'écran.
+        {/* Actions Footer */}
+        <div className="bg-gray-50 p-6 flex flex-col gap-3">
+          <button 
+            onClick={() => window.print()} 
+            className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+          >
+            <Printer size={18}/> Imprimer le reçu / Sauvegarder
+          </button>
+          
+          <Link 
+            to="/" 
+            className="w-full bg-brand-brown text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition"
+          >
+            Retourner à l'accueil <ArrowRight size={18}/>
+          </Link>
         </div>
-
-        <Link 
-          to="/" 
-          className="block w-full bg-brand-brown text-white py-3 rounded-xl font-bold hover:bg-brand-beige transition-colors"
-        >
-          Retour à l'accueil
-        </Link>
       </div>
     </div>
   );

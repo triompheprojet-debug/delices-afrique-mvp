@@ -3,8 +3,8 @@ import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { 
   Search, Filter, Truck, ShoppingBag, Phone, MapPin, 
-  Clock, CheckCircle, XCircle, AlertCircle, Calendar,
-  ArrowUpRight, DollarSign
+  Clock, Calendar, DollarSign, User, ChevronDown, 
+  ChevronUp, ExternalLink, CreditCard
 } from 'lucide-react';
 
 const Orders = () => {
@@ -12,13 +12,16 @@ const Orders = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // --- ÉTATS POUR LA RECHERCHE ET LES FILTRES ---
+  // Gestion de l'expansion des cartes (pour voir les détails)
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+
+  // Filtres
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tous');
   
   const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
-  // 1. Récupération des données (Real-time)
+  // --- 1. RÉCUPÉRATION DATA ---
   useEffect(() => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     
@@ -28,7 +31,7 @@ const Orders = () => {
         ...doc.data()
       }));
 
-      // Son de notification si nouvelle commande
+      // Notification sonore (si nouvelle commande arrive)
       if (!loading && ordersData.length > orders.length) {
          audioRef.current.play().catch(e => console.log("Audio autoplay bloqué"));
       }
@@ -40,16 +43,14 @@ const Orders = () => {
     return () => unsubscribe();
   }, []);
 
-  // 2. Moteur de Recherche et Filtrage
+  // --- 2. FILTRAGE ---
   useEffect(() => {
     let result = orders;
 
-    // Filtre par Statut
     if (statusFilter !== 'Tous') {
       result = result.filter(order => order.status === statusFilter);
     }
 
-    // Filtre par Recherche (Nom, Tel, Code)
     if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
       result = result.filter(order => 
@@ -62,7 +63,7 @@ const Orders = () => {
     setFilteredOrders(result);
   }, [orders, searchTerm, statusFilter]);
 
-  // Fonction update statut
+  // --- 3. ACTIONS ---
   const updateStatus = async (orderId, newStatus) => {
     try {
       await updateDoc(doc(db, "orders", orderId), { status: newStatus });
@@ -71,7 +72,18 @@ const Orders = () => {
     }
   };
 
-  // --- STATISTIQUES RAPIDES (Calculées à la volée) ---
+  const toggleExpand = (id) => {
+    setExpandedOrderId(expandedOrderId === id ? null : id);
+  };
+
+  // Helper pour ouvrir Google Maps avec les coordonnées
+  const openGps = (lat, lng) => {
+    if(lat && lng) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+    }
+  };
+
+  // --- STATS ---
   const stats = {
     pending: orders.filter(o => o.status === 'En attente').length,
     revenue: orders.reduce((acc, curr) => acc + (curr.details?.finalTotal || 0), 0),
@@ -79,74 +91,58 @@ const Orders = () => {
   };
 
   return (
-    <div className="pb-20 max-w-6xl mx-auto">
+    <div className="pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
       
-      {/* --- EN-TÊTE & STATS --- */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Gestion des Commandes</h1>
+      {/* --- EN-TÊTE --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-gray-900">Commandes</h1>
+          <p className="text-gray-500 text-sm">Gérez vos livraisons et retraits en temps réel.</p>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Carte 1 : En attente */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100 flex items-center justify-between">
+        {/* Stats Rapides */}
+        <div className="flex gap-3 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
+          <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-orange-100 flex items-center gap-3 min-w-[140px]">
+            <div className="bg-orange-100 p-2 rounded-lg text-orange-600"><Clock size={18}/></div>
             <div>
-              <p className="text-gray-500 text-sm font-medium">En attente</p>
-              <h3 className="text-2xl font-bold text-orange-600">{stats.pending}</h3>
-            </div>
-            <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
-              <Clock size={24} />
+              <div className="text-xs text-gray-500 font-bold uppercase">Attente</div>
+              <div className="font-bold text-xl text-gray-800">{stats.pending}</div>
             </div>
           </div>
-
-          {/* Carte 2 : Chiffre d'affaire (Total théorique) */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100 flex items-center justify-between">
+          <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-green-100 flex items-center gap-3 min-w-[140px]">
+            <div className="bg-green-100 p-2 rounded-lg text-green-600"><DollarSign size={18}/></div>
             <div>
-              <p className="text-gray-500 text-sm font-medium">Revenu Total</p>
-              <h3 className="text-2xl font-bold text-green-700">{stats.revenue.toLocaleString()} <span className="text-sm">FCFA</span></h3>
-            </div>
-            <div className="p-3 bg-green-50 text-green-700 rounded-lg">
-              <DollarSign size={24} />
-            </div>
-          </div>
-
-          {/* Carte 3 : Livraisons */}
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Demandes Livraison</p>
-              <h3 className="text-2xl font-bold text-blue-600">{stats.delivery}</h3>
-            </div>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-              <Truck size={24} />
+              <div className="text-xs text-gray-500 font-bold uppercase">Revenu</div>
+              <div className="font-bold text-xl text-gray-800">{(stats.revenue / 1000).toFixed(1)}k</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- BARRE D'OUTILS (Recherche + Filtres) --- */}
-      <div className="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-10 border border-gray-100">
-        
-        {/* Barre de recherche */}
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+      {/* --- BARRE DE CONTRÔLE (Sticky) --- */}
+      <div className="sticky top-2 z-30 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-3">
+        {/* Recherche */}
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="Rechercher (Nom, Tel, Code CMD...)" 
+            placeholder="Rechercher un client, N°..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-brown/20 transition"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-brown/20 transition text-sm"
           />
         </div>
 
-        {/* Filtres Statut */}
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          <Filter size={20} className="text-gray-400 hidden md:block" />
+        {/* Filtres (Scrollable sur mobile) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
           {['Tous', 'En attente', 'En préparation', 'En livraison', 'Terminé'].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
                 statusFilter === status 
-                  ? 'bg-brand-brown text-white shadow-md' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-md' 
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
               }`}
             >
               {status}
@@ -155,112 +151,188 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* --- LISTE DES COMMANDES --- */}
+      {/* --- LISTE DES CARTES --- */}
       {loading ? (
-        <div className="text-center py-20 text-gray-500">Chargement des commandes...</div>
+        <div className="text-center py-20 text-gray-400 animate-pulse">Chargement des commandes...</div>
       ) : filteredOrders.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-          <Search size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 font-medium">Aucune commande trouvée pour cette recherche.</p>
-          <button onClick={() => {setSearchTerm(''); setStatusFilter('Tous')}} className="mt-2 text-brand-brown underline">Réinitialiser les filtres</button>
+        <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-gray-300">
+          <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+             <Search size={24} className="text-gray-400" />
+          </div>
+          <p className="text-gray-500 font-medium">Aucune commande trouvée.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredOrders.map((order) => (
-            <div key={order.id} className={`bg-white rounded-xl border transition-all hover:shadow-md ${order.status === 'En attente' ? 'border-l-4 border-l-red-500 border-gray-200' : 'border-gray-200'}`}>
-              
-              {/* En-tête de la carte */}
-              <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-start gap-4">
-                <div className="flex gap-4">
-                  {/* Icone Type (Livraison vs Retrait) */}
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${order.details?.method === 'Livraison' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {order.details?.method === 'Livraison' ? <Truck size={24}/> : <ShoppingBag size={24}/>}
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono font-bold text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded border border-gray-200">{order.code}</span>
-                      <span className="text-xs text-gray-400 flex items-center gap-1"><Calendar size={12}/> {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
-                    </div>
-                    <h3 className="font-bold text-lg text-gray-800">{order.customer?.name}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                      <a href={`tel:${order.customer?.phone}`} className="flex items-center gap-1 hover:text-brand-brown font-medium"><Phone size={14}/> {order.customer?.phone}</a>
-                    </div>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 gap-4">
+          {filteredOrders.map((order) => {
+            const isExpanded = expandedOrderId === order.id;
+            const isDelivery = order.details?.method === 'Livraison';
+            const statusColor = 
+                order.status === 'En attente' ? 'bg-red-100 text-red-700 border-red-200' :
+                order.status === 'Terminé' || order.status === 'Livré' ? 'bg-green-100 text-green-700 border-green-200' :
+                'bg-blue-100 text-blue-700 border-blue-200';
 
-                {/* Sélecteur de Statut */}
-                <div className="flex flex-col items-end gap-2">
-                   <div className="relative">
-                      <select 
-                        value={order.status} 
-                        onChange={(e) => updateStatus(order.id, e.target.value)}
-                        className={`appearance-none pl-4 pr-10 py-2 rounded-lg text-sm font-bold cursor-pointer border focus:ring-2 focus:ring-opacity-50 outline-none
-                          ${order.status === 'En attente' ? 'bg-red-50 text-red-700 border-red-200 focus:ring-red-200' : 
-                            order.status === 'Livré' || order.status === 'Terminé' ? 'bg-green-50 text-green-700 border-green-200' : 
-                            'bg-blue-50 text-blue-700 border-blue-200'}`}
-                      >
-                        <option>En attente</option>
-                        <option>En préparation</option>
-                        {order.details?.method === 'Livraison' ? <option>En livraison</option> : <option>Prêt au retrait</option>}
-                        <option>Livré</option>
-                        <option>Terminé</option>
-                        <option>Annulé</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                      </div>
-                   </div>
-                   <span className="text-2xl font-bold text-gray-800">
-                      {order.details?.finalTotal?.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span>
-                   </span>
-                </div>
-              </div>
-
-              {/* Corps : Adresse & Produits */}
-              <div className="p-5 grid md:grid-cols-2 gap-6">
+            return (
+              <div key={order.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
                 
-                {/* Info Livraison / Retrait */}
-                <div className="bg-gray-50 p-4 rounded-xl">
-                   <h4 className="font-bold text-gray-700 text-xs uppercase mb-3 flex items-center gap-2">
-                      {order.details?.method === 'Livraison' ? <><MapPin size={14}/> Adresse de livraison</> : <><Clock size={14}/> Date de retrait</>}
-                   </h4>
-                   {order.details?.method === 'Livraison' ? (
-                      <p className="text-gray-800 font-medium leading-relaxed">{order.customer?.address}</p>
-                   ) : (
-                      <p className="text-gray-800 font-medium">
-                        {order.details?.pickupDate ? new Date(order.details.pickupDate).toLocaleString('fr-FR') : 'Non spécifié'}
-                      </p>
-                   )}
-                   
-                   {order.details?.notes && (
-                     <div className="mt-3 text-sm bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-100 flex gap-2 items-start">
-                        <AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>
-                        <span>"{order.details.notes}"</span>
-                     </div>
-                   )}
-                </div>
+                {/* --- HEADER CARTE (Toujours visible) --- */}
+                <div className="p-4 md:p-5 flex flex-col md:flex-row gap-4">
+                  
+                  {/* Gauche: Icone + Info Client */}
+                  <div className="flex gap-4 flex-grow">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDelivery ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                      {isDelivery ? <Truck size={24}/> : <ShoppingBag size={24}/>}
+                    </div>
+                    
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-mono text-xs font-bold text-gray-500 tracking-wider">#{order.code}</span>
+                        <span className="text-xs text-gray-400 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md">
+                          <Calendar size={10}/> 
+                          {/* Affichage intelligent de la date */}
+                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'}) : ''}
+                           à {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-lg leading-tight">{order.customer?.name}</h3>
+                      <a href={`tel:${order.customer?.phone}`} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-brown font-medium mt-1">
+                        <Phone size={14}/> {order.customer?.phone}
+                      </a>
+                    </div>
+                  </div>
 
-                {/* Liste Produits */}
-                <div>
-                  <h4 className="font-bold text-gray-700 text-xs uppercase mb-3 flex items-center gap-2"><ShoppingBag size={14}/> Détail commande</h4>
-                  <ul className="space-y-2">
-                    {order.items?.map((item, idx) => (
-                      <li key={idx} className="flex justify-between text-sm border-b border-gray-100 pb-1 last:border-0">
-                        <span className="text-gray-600"><span className="font-bold text-gray-800">{item.quantity}x</span> {item.name}</span>
-                        <span className="font-medium text-gray-800">{(item.price * item.quantity).toLocaleString()}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-3 flex justify-between text-sm pt-2 border-t border-gray-200">
-                     <span className="text-gray-500">Livraison</span>
-                     <span className="font-medium">{order.details?.deliveryFee > 0 ? order.details.deliveryFee : 'Gratuit'}</span>
+                  {/* Droite: Statut + Prix + Toggle */}
+                  <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-3 border-t md:border-t-0 border-gray-100 pt-3 md:pt-0">
+                    
+                    {/* Selecteur Statut Stylisé */}
+                    <div className="relative">
+                       <select 
+                         value={order.status} 
+                         onChange={(e) => updateStatus(order.id, e.target.value)}
+                         className={`appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-bold cursor-pointer border focus:ring-2 focus:ring-offset-1 outline-none transition-colors ${statusColor}`}
+                       >
+                         <option>En attente</option>
+                         <option>En préparation</option>
+                         <option>{isDelivery ? 'En livraison' : 'Prêt au retrait'}</option>
+                         <option>Livré</option>
+                         <option>Terminé</option>
+                         <option>Annulé</option>
+                       </select>
+                       <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"/>
+                    </div>
+
+                    <div className="text-right">
+                       <div className="text-xl font-serif font-bold text-gray-900">
+                         {order.details?.finalTotal?.toLocaleString()} <span className="text-xs font-sans text-gray-400 font-normal">FCFA</span>
+                       </div>
+                       <button 
+                         onClick={() => toggleExpand(order.id)}
+                         className="hidden md:flex items-center gap-1 text-xs text-gray-400 hover:text-gray-800 ml-auto transition"
+                       >
+                         {isExpanded ? 'Masquer détails' : 'Voir détails'} <ChevronDown size={12} className={`transform transition ${isExpanded ? 'rotate-180' : ''}`}/>
+                       </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* --- DÉTAILS EXPANDABLES (Visible si click ou bouton) --- */}
+                {/* Sur mobile, on affiche toujours un bouton "Voir plus" en bas, ou on laisse ouvert si expanded */}
+                <div className={`bg-gray-50/50 border-t border-gray-100 transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                  <div className="p-5 grid md:grid-cols-2 gap-6">
+                    
+                    {/* Colonne 1 : Logistique */}
+                    <div className="space-y-4">
+                      {/* Adresse / Lieu */}
+                      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                           {isDelivery ? <><MapPin size={14}/> Destination</> : <><Clock size={14}/> Retrait prévu</>}
+                         </h4>
+                         
+                         {isDelivery ? (
+                           <>
+                             <p className="text-gray-800 font-medium mb-3">{order.customer?.addressText || "Adresse non spécifiée"}</p>
+                             {/* BOUTON GPS IMPORTANȚ */}
+                             {order.customer?.location && (
+                               <button 
+                                 onClick={() => openGps(order.customer.location.lat, order.customer.location.lng)}
+                                 className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition"
+                               >
+                                 <ExternalLink size={16}/> Ouvrir GPS
+                               </button>
+                             )}
+                           </>
+                         ) : (
+                           <div>
+                             <p className="text-gray-800 font-bold text-lg">
+                               {order.details?.scheduledDate ? new Date(order.details.scheduledDate).toLocaleDateString() : 'Date inconnue'}
+                             </p>
+                             <p className="text-gray-600">
+                               à {order.details?.scheduledTime || '--:--'}
+                             </p>
+                           </div>
+                         )}
+                      </div>
+
+                      {/* Paiement & Notes */}
+                      <div className="flex gap-4">
+                        <div className="flex-1 bg-white p-3 rounded-xl border border-gray-100">
+                           <div className="text-xs text-gray-400 mb-1">Paiement</div>
+                           <div className="font-bold text-gray-700 text-sm flex items-center gap-1">
+                             <CreditCard size={14}/> {order.details?.paymentMethod || 'Espèces'}
+                           </div>
+                        </div>
+                        {order.details?.deliveryDistance && (
+                          <div className="flex-1 bg-white p-3 rounded-xl border border-gray-100">
+                             <div className="text-xs text-gray-400 mb-1">Distance</div>
+                             <div className="font-bold text-gray-700 text-sm">{order.details.deliveryDistance} km</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {order.details?.notes && (
+                        <div className="bg-yellow-50 text-yellow-800 p-3 rounded-xl text-sm border border-yellow-100">
+                          <span className="font-bold">Note client :</span> "{order.details.notes}"
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Colonne 2 : Panier */}
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-fit">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <ShoppingBag size={14}/> Contenu du panier
+                      </h4>
+                      <ul className="divide-y divide-gray-50">
+                        {order.items?.map((item, idx) => (
+                          <li key={idx} className="py-2 flex justify-between text-sm">
+                            <div className="flex items-start gap-3">
+                              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold h-fit">{item.quantity}x</span>
+                              <span className="text-gray-700">{item.name} <span className="text-gray-400 text-xs block">{item.variant}</span></span>
+                            </div>
+                            <span className="font-medium text-gray-900">{(item.price * item.quantity).toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-sm text-gray-500">
+                         <span>Frais de livraison</span>
+                         <span className="font-medium text-gray-800">
+                           {order.details?.deliveryFee > 0 ? `+ ${order.details.deliveryFee.toLocaleString()}` : 'Offert'}
+                         </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Bouton Toggle Mobile Uniquement */}
+                <button 
+                  onClick={() => toggleExpand(order.id)}
+                  className="w-full py-3 bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-widest hover:bg-gray-100 md:hidden flex items-center justify-center gap-2 border-t border-gray-100"
+                >
+                  {isExpanded ? 'Fermer' : 'Détails Commande'} <ChevronDown size={14} className={`transform transition ${isExpanded ? 'rotate-180' : ''}`}/>
+                </button>
+
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

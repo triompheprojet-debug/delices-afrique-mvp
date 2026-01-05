@@ -1,161 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
+import { useConfig } from '../../context/ConfigContext';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useConfig } from '../../context/ConfigContext';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, User, Truck, ShoppingBag, CheckCircle, Calendar, Camera } from 'lucide-react';
+import axios from 'axios'; // Pour la recherche d'adresse
+import { 
+  MapPin, 
+  User, 
+  Truck, 
+  ShoppingBag, 
+  Calendar, 
+  Clock, 
+  CreditCard, 
+  Search, 
+  CheckCircle 
+} from 'lucide-react';
+
+// --- IMPORTS LEAFLET (Carte) ---
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Correction icône Leaflet
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+// Composant pour déplacer la vue de la carte quand on fait une recherche
+const MapUpdater = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, 15);
+    }
+  }, [center, map]);
+  return null;
+};
+
+// Composant Marqueur qui gère le clic
+const LocationMarker = ({ setPosition, setDistance, bakeryLoc }) => {
+  const [markerPos, setMarkerPos] = useState(null);
+  
+  // Formule Haversine pour distance
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * (Math.PI/180);
+    const dLon = (lon2 - lon1) * (Math.PI/180);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+  };
+
+  useMapEvents({
+    click(e) {
+      setMarkerPos(e.latlng);
+      setPosition(e.latlng);
+      if (bakeryLoc) {
+        const dist = calculateDistance(bakeryLoc.lat, bakeryLoc.lng, e.latlng.lat, e.latlng.lng);
+        setDistance(dist);
+      }
+    },
+  });
+
+  return markerPos ? <Marker position={markerPos}><Popup>Lieu de livraison</Popup></Marker> : null;
+};
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
-  const { isOpenNow, config } = useConfig();
+  const { config, isOpenNow } = useConfig();
   const navigate = useNavigate();
-  
-  // --- Config ---
-  const DELIVERY_FEE = 1500; 
-  const DELIVERY_DELAY_MSG = "45 à 60 minutes";
-  // --------------
 
   const [loading, setLoading] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Données GPS
+  const [gpsLocation, setGpsLocation] = useState(null);
+  const [deliveryDistance, setDeliveryDistance] = useState(0);
+  const [mapCenter, setMapCenter] = useState([config.bakeryLocation.lat, config.bakeryLocation.lng]);
 
+  // Formulaire complet
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    address: '',
-    method: 'Livraison',
-    pickupDate: '',
+    date: '',
+    time: '',
+    method: 'Livraison', // 'Livraison' ou 'Retrait'
+    payment: 'Espèces', // 'Espèces' ou 'Mobile Money'
+    addressDetails: '', // Complément d'adresse
     notes: ''
   });
 
-  const finalTotal = formData.method === 'Livraison' ? cartTotal + DELIVERY_FEE : cartTotal;
+  // Calcul Frais
+  const deliveryCost = formData.method === 'Livraison' 
+    ? Math.max(500, Math.round(deliveryDistance * config.deliveryRatePerKm)) 
+    : 0;
 
-  // Si pas de panier ou panier vide
-  if (!cartItems || (cartItems.length === 0 && !orderComplete)) {
-    return (
-       <div className="min-h-screen flex items-center justify-center p-4">
-          <p>Chargement ou Panier vide...</p>
-       </div>
-    );
-  }
+  const finalTotal = cartTotal + deliveryCost;
 
-  // --- SOUMISSION DU FORMULAIRE ---
-  const handleFormSubmit = async (e) => {
-    e.preventDefault(); // Empêche le rechargement, mais la validation HTML a déjà eu lieu
-    
-    // Double sécurité : Vérifier si le panier n'est pas vide
-    if (cartItems.length === 0) return;
-
-    setLoading(true);
-
-    try {
-      const uniqueCode = 'CMD-' + Math.floor(10000 + Math.random() * 90000);
-
-      const orderData = {
-        code: uniqueCode,
-        customer: {
-          name: formData.name,
-          phone: formData.phone,
-          address: formData.method === 'Livraison' ? formData.address : 'Retrait Boutique',
-        },
-        items: cartItems.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.quantity * item.price
-        })),
-        details: {
-          subTotal: cartTotal,
-          deliveryFee: formData.method === 'Livraison' ? DELIVERY_FEE : 0,
-          finalTotal: finalTotal,
-          method: formData.method,
-          pickupDate: formData.method === 'Retrait' ? formData.pickupDate : null,
-          notes: formData.notes
-        },
-        status: 'En attente',
-        createdAt: serverTimestamp(),
-      };
-
-      await addDoc(collection(db, "orders"), orderData);
-      setOrderComplete(orderData);
-      clearCart();
-      window.scrollTo(0, 0);
-
-    } catch (error) {
-      console.error("Erreur:", error);
-      alert("Erreur lors de l'envoi.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // --- VUE SUCCÈS (Message de confiance) ---
-  if (orderComplete) {
-    return (
-      <div className="min-h-screen bg-brand-brown p-4 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
-          {/* En-tête Vert */}
-          <div className="bg-green-600 p-6 text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
-              <CheckCircle size={32} className="text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Commande Validée !</h1>
-            <p className="text-green-100 text-sm">Merci pour votre confiance.</p>
-          </div>
-
-          <div className="p-6">
-            {/* Le Code Unique */}
-            <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-4 text-center mb-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Votre Code de Retrait / Livraison</p>
-              <h2 className="text-3xl font-mono font-bold text-brand-brown tracking-wider">{orderComplete.code}</h2>
-              <div className="flex items-center justify-center gap-1 text-xs text-red-500 mt-2 font-bold">
-                <Camera size={12} />
-                <span>Capturez cet écran maintenant</span>
-              </div>
-            </div>
-
-            {/* Message de Délai / Retrait */}
-            <div className="mb-6">
-              {orderComplete.details.method === 'Livraison' ? (
-                <p className="text-center text-gray-700">
-                  Votre commande arrivera dans environ <span className="font-bold text-brand-brown">{DELIVERY_DELAY_MSG}</span>. 
-                  Notre livreur vous contactera au <span className="font-bold">{orderComplete.customer.phone}</span>.
-                </p>
-              ) : (
-                <p className="text-center text-gray-700">
-                  Votre commande sera prête pour le retrait le <span className="font-bold text-brand-brown">{new Date(orderComplete.details.pickupDate).toLocaleString('fr-FR')}</span>.
-                  Présentez votre code au comptoir.
-                </p>
-              )}
-            </div>
-
-            {/* Récapitulatif Rapide */}
-            <div className="border-t border-gray-100 pt-4 mb-6">
-              <h3 className="font-bold text-gray-800 mb-2 text-sm">Récapitulatif</h3>
-              <ul className="text-sm text-gray-600 space-y-1 mb-3">
-                {orderComplete.items.map((item, idx) => (
-                  <li key={idx} className="flex justify-between">
-                    <span>{item.quantity}x {item.name}</span>
-                    <span>{(item.total).toLocaleString()} FCFA</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-between items-center font-bold text-lg text-brand-brown border-t border-gray-100 pt-2">
-                <span>Total à payer</span>
-                <span>{orderComplete.details.finalTotal.toLocaleString()} FCFA</span>
-              </div>
-            </div>
-
-            <button onClick={() => navigate('/')} className="w-full bg-brand-brown text-white font-bold py-3 rounded-xl hover:bg-brand-brown/90 transition">
-              Retour à l'accueil
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-if (!isOpenNow) {
-    return (
+  // Redirection si fermé (Sécurité supplémentaire)
+  if (!isOpenNow && !config.maintenanceMode) {
+     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6 text-red-600">
           <Clock size={40} />
@@ -171,82 +125,295 @@ if (!isOpenNow) {
       </div>
     );
   }
-  // --- VUE FORMULAIRE ---
-  return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 pb-24">
-      {/* On encapsule TOUT dans la balise form pour que 'required' fonctionne */}
-      <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+  // --- FONCTION RECHERCHE ADRESSE (Nominatim) ---
+  const handleAddressSearch = async () => {
+    if (!searchQuery) return;
+    setIsSearching(true);
+    try {
+      // On ajoute "Pointe-Noire" pour affiner la recherche
+      const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}, Pointe-Noire, Congo&limit=1`);
+      
+      if (response.data && response.data.length > 0) {
+        const result = response.data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
         
-        {/* Partie Gauche : Infos */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2"><User size={20}/> Vos Coordonnées</h2>
-            <div className="space-y-4">
-              {/* Notez le 'required' ici */}
-              <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border rounded-lg p-3" placeholder="Nom complet *" />
-              <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border rounded-lg p-3" placeholder="Téléphone *" />
-            </div>
-          </div>
+        const newPos = { lat, lng };
+        setGpsLocation(newPos);
+        setMapCenter([lat, lng]); // Bouge la carte
+        
+        // Calcul distance immédiat
+        const R = 6371; 
+        const dLat = (lat - config.bakeryLocation.lat) * (Math.PI/180);
+        const dLon = (lng - config.bakeryLocation.lng) * (Math.PI/180);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(config.bakeryLocation.lat * (Math.PI/180)) * Math.cos(lat * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        setDeliveryDistance(R * c);
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2"><Truck size={20}/> Livraison ou Retrait</h2>
+      } else {
+        alert("Adresse introuvable. Essayez de déplacer le marqueur manuellement sur la carte.");
+      }
+    } catch (error) {
+      console.error("Erreur recherche", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (formData.method === 'Livraison' && !gpsLocation) {
+        alert("Veuillez indiquer votre position sur la carte (Recherche ou Clic).");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Création de l'objet commande
+      const orderData = {
+        code: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
+        customer: {
+          name: formData.name,
+          phone: formData.phone,
+          location: formData.method === 'Livraison' ? { lat: gpsLocation.lat, lng: gpsLocation.lng } : null,
+          // IMPORTANT : On concatène pour avoir une adresse lisible
+          addressText: formData.method === 'Livraison' 
+             ? (searchQuery + (formData.addressDetails ? ', ' + formData.addressDetails : '')) 
+             : "Retrait Boutique"
+        },
+        items: cartItems,
+        details: {
+          subTotal: cartTotal,
+          deliveryFee: deliveryCost,
+          deliveryDistance: formData.method === 'Livraison' ? deliveryDistance.toFixed(2) : 0,
+          finalTotal: finalTotal,
+          method: formData.method,
+          paymentMethod: formData.payment,
+          scheduledDate: formData.date,
+          scheduledTime: formData.time,
+          notes: formData.notes
+        },
+        status: 'En attente',
+        createdAt: serverTimestamp(),
+      };
+
+      // 1. Envoi à Firebase
+      await addDoc(collection(db, "orders"), orderData);
+      
+      // 2. Vider le panier
+      clearCart();
+      
+      // 3. REDIRECTION VERS LA CONFIRMATION (Au lieu de l'alert)
+      // On passe "orderData" via le state pour l'afficher sur la page suivante
+      navigate('/confirmation', { state: { order: orderData } });
+
+    } catch (error) {
+      console.error(error);
+      alert("Une erreur est survenue. Vérifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!cartItems.length) return <div className="min-h-screen flex items-center justify-center">Votre panier est vide.</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4 pb-32">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-serif font-bold text-gray-800 mb-8 flex items-center gap-2">
+          <CheckCircle className="text-brand-brown"/> Finaliser la commande
+        </h1>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* --- COLONNE GAUCHE : FORMULAIRE --- */}
+          <div className="lg:col-span-2 space-y-6">
             
-            <div className="grid grid-cols-2 gap-4 mb-4">
-               <label className={`border-2 rounded-xl p-4 cursor-pointer flex flex-col items-center gap-2 ${formData.method === 'Livraison' ? 'border-brand-brown bg-brand-beige/10' : ''}`}>
-                 <input type="radio" name="method" className="hidden" checked={formData.method === 'Livraison'} onChange={() => setFormData({...formData, method: 'Livraison'})}/>
-                 <Truck size={24}/> <span className="font-bold text-sm">Livraison</span>
-               </label>
-               <label className={`border-2 rounded-xl p-4 cursor-pointer flex flex-col items-center gap-2 ${formData.method === 'Retrait' ? 'border-brand-brown bg-brand-beige/10' : ''}`}>
-                 <input type="radio" name="method" className="hidden" checked={formData.method === 'Retrait'} onChange={() => setFormData({...formData, method: 'Retrait'})}/>
-                 <ShoppingBag size={24}/> <span className="font-bold text-sm">Retrait</span>
-               </label>
+            {/* 1. Informations Personnelles */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <User size={20} className="text-brand-brown"/> Vos Coordonnées
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                 <div>
+                   <label className="text-sm font-bold text-gray-600">Nom complet</label>
+                   <input required type="text" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full border p-3 rounded-lg mt-1"/>
+                 </div>
+                 <div>
+                   <label className="text-sm font-bold text-gray-600">Téléphone</label>
+                   <input required type="tel" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full border p-3 rounded-lg mt-1"/>
+                 </div>
+              </div>
             </div>
 
-            {formData.method === 'Livraison' ? (
-              <div>
-                <label className="font-bold text-sm text-gray-700 mb-1 block">Adresse précise *</label>
-                <textarea required value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border rounded-lg p-3" placeholder="Quartier, rue, numéro..."></textarea>
+            {/* 2. Mode de Réception (Livraison / Retrait) */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Truck size={20} className="text-brand-brown"/> Mode de réception
+              </h2>
+              
+              <div className="flex gap-4 mb-6">
+                <button type="button" onClick={() => setFormData({...formData, method: 'Livraison'})} className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 ${formData.method === 'Livraison' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
+                  <Truck size={18}/> Livraison
+                </button>
+                <button type="button" onClick={() => setFormData({...formData, method: 'Retrait'})} className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 ${formData.method === 'Retrait' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
+                  <ShoppingBag size={18}/> Retrait Boutique
+                </button>
               </div>
-            ) : (
+
+              {/* --- IF LIVRAISON : RECHERCHE + CARTE --- */}
+              {formData.method === 'Livraison' && (
+                <div className="animate-fade-in space-y-4">
+                  
+                  {/* Barre de Recherche */}
+                  <div className="relative">
+                    <label className="text-sm font-bold text-gray-600 mb-1 block">Rechercher votre quartier / rue</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="Ex: Marché Tié-Tié, Pointe-Noire..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 border p-3 rounded-lg pl-10"
+                      />
+                      <Search className="absolute left-3 top-9 text-gray-400" size={18}/>
+                      <button 
+                        type="button"
+                        onClick={handleAddressSearch}
+                        className="bg-gray-800 text-white px-4 rounded-lg font-bold"
+                        disabled={isSearching}
+                      >
+                        {isSearching ? '...' : 'Chercher'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Carte */}
+                  <div className="h-64 rounded-xl overflow-hidden border-2 border-gray-200 relative z-0">
+                    <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
+                      <MapUpdater center={mapCenter} />
+                      
+                      {/* Marqueur Boutique */}
+                      <Marker position={[config.bakeryLocation.lat, config.bakeryLocation.lng]}>
+                        <Popup>La Pâtisserie</Popup>
+                      </Marker>
+                      
+                      {/* Marqueur Client (Interactif) */}
+                      <LocationMarker 
+                        setPosition={setGpsLocation} 
+                        setDistance={setDeliveryDistance} 
+                        bakeryLoc={config.bakeryLocation} 
+                      />
+                    </MapContainer>
+                  </div>
+
+                  {/* Résultat Distance */}
+                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg text-blue-800 text-sm">
+                    <span>{gpsLocation ? "Position validée" : "Cliquez sur la carte pour préciser"}</span>
+                    {gpsLocation && <span className="font-bold">{deliveryDistance.toFixed(2)} km (+{deliveryCost} FCFA)</span>}
+                  </div>
+
+                  <input 
+                    type="text" 
+                    placeholder="Précisions (Numéro de porte, couleur maison...)" 
+                    value={formData.addressDetails}
+                    onChange={e=>setFormData({...formData, addressDetails: e.target.value})}
+                    className="w-full border p-3 rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 3. Date & Paiement */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid md:grid-cols-2 gap-6">
               <div>
-                <label className="font-bold text-sm text-gray-700 mb-1 block">Date et Heure de retrait *</label>
-                <input required type="datetime-local" value={formData.pickupDate} onChange={e => setFormData({...formData, pickupDate: e.target.value})} className="w-full border rounded-lg p-3" />
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Calendar size={18}/> Quand ?</h3>
+                <input type="date" className="w-full border p-3 rounded-lg mb-2" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})}/>
+                <input type="time" className="w-full border p-3 rounded-lg" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})}/>
               </div>
-            )}
-             
-            <div className="mt-4">
-              <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border rounded-lg p-3" placeholder="Message optionnel..." />
+              
+              <div>
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><CreditCard size={18}/> Paiement</h3>
+                <select className="w-full border p-3 rounded-lg bg-white" value={formData.payment} onChange={e=>setFormData({...formData, payment: e.target.value})}>
+                  <option value="Espèces">Espèces à la livraison</option>
+                  <option value="Mobile Money">Airtel Money / MTN MoMo</option>
+                </select>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+               <label className="block text-sm font-bold text-gray-700 mb-1">Message pour la pâtisserie (Optionnel)</label>
+               <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-brown/20" placeholder="Ex: Anniversaire, Allergies..."/>
             </div>
           </div>
-        </div>
 
-        {/* Partie Droite : Résumé (Lecture seule) */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm h-fit">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Votre Commande</h2>
-          <div className="max-h-60 overflow-y-auto mb-4 border-b border-gray-100 pb-2">
-            {cartItems.map((item, idx) => (
-              <div key={idx} className="flex justify-between py-2 text-sm">
-                <span>{item.quantity}x {item.name}</span>
-                <span className="font-bold">{(item.price * item.quantity).toLocaleString()}</span>
+          {/* --- COLONNE DROITE : RÉSUMÉ --- */}
+          <div className="h-fit space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
+              <h2 className="text-xl font-serif font-bold text-gray-800 mb-6 pb-4 border-b">Résumé de commande</h2>
+              
+              {/* Liste des articles (Restauration demandée) */}
+              <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {cartItems.map((item, index) => (
+                  <div key={index} className="flex justify-between items-start text-sm">
+                    <div>
+                      <span className="font-bold text-gray-700">{item.quantity}x</span> {item.name}
+                      {item.variant && <div className="text-xs text-gray-400">{item.variant}</div>}
+                    </div>
+                    <span className="font-medium">{(item.price * item.quantity).toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          
-          <div className="space-y-2 text-sm text-gray-600 mb-4">
-            <div className="flex justify-between"><span>Sous-total</span> <span>{cartTotal.toLocaleString()} FCFA</span></div>
-            <div className="flex justify-between"><span>Livraison</span> <span>{formData.method === 'Livraison' ? DELIVERY_FEE : 0} FCFA</span></div>
-          </div>
-          
-          <div className="flex justify-between text-xl font-bold text-brand-brown mb-6">
-            <span>Total</span> <span>{finalTotal.toLocaleString()} FCFA</span>
+
+              {/* Calculs */}
+              <div className="space-y-2 pt-4 border-t border-gray-100 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Sous-total</span>
+                  <span>{cartTotal.toLocaleString()} FCFA</span>
+                </div>
+                
+                {/* Condition d'affichage livraison */}
+                {formData.method === 'Livraison' ? (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span className="flex items-center gap-1"><Truck size={14}/> Livraison ({deliveryDistance.toFixed(1)} km)</span>
+                    <span>+{deliveryCost.toLocaleString()} FCFA</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-gray-400 italic">
+                    <span>Retrait en boutique</span>
+                    <span>0 FCFA</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Final */}
+              <div className="mt-6 pt-4 border-t-2 border-dashed border-gray-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-800">Total à payer</span>
+                  <span className="text-2xl font-serif font-bold text-brand-brown">{finalTotal.toLocaleString()} <span className="text-sm text-gray-500">FCFA</span></span>
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full mt-8 bg-brand-red text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Validation en cours...' : 'Confirmer la commande'}
+              </button>
+              
+              <p className="text-xs text-center text-gray-400 mt-4">
+                En confirmant, vous acceptez de payer à la réception.
+              </p>
+            </div>
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-brand-red text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700 transition">
-            {loading ? 'Envoi...' : 'Confirmer la commande'}
-          </button>
-        </div>
-
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
