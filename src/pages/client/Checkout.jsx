@@ -4,17 +4,17 @@ import { useConfig } from '../../context/ConfigContext';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Pour la recherche d'adresse
+import axios from 'axios';
 import { 
   MapPin, 
   User, 
   Truck, 
   ShoppingBag, 
   Calendar, 
-  Clock, 
   CreditCard, 
   Search, 
-  CheckCircle 
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 // --- IMPORTS LEAFLET (Carte) ---
@@ -33,7 +33,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Composant pour déplacer la vue de la carte quand on fait une recherche
+// Composant pour déplacer la vue de la carte
 const MapUpdater = ({ center }) => {
   const map = useMap();
   useEffect(() => {
@@ -44,11 +44,10 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// Composant Marqueur qui gère le clic
+// Composant Marqueur Interactif
 const LocationMarker = ({ setPosition, setDistance, bakeryLoc }) => {
   const [markerPos, setMarkerPos] = useState(null);
   
-  // Formule Haversine pour distance
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI/180);
@@ -94,9 +93,9 @@ const Checkout = () => {
     phone: '',
     date: '',
     time: '',
-    method: 'Livraison', // 'Livraison' ou 'Retrait'
-    payment: 'Espèces', // 'Espèces' ou 'Mobile Money'
-    addressDetails: '', // Complément d'adresse
+    method: 'Livraison', 
+    payment: 'Espèces', 
+    addressDetails: '', 
     notes: ''
   });
 
@@ -107,7 +106,7 @@ const Checkout = () => {
 
   const finalTotal = cartTotal + deliveryCost;
 
-  // Redirection si fermé (Sécurité supplémentaire)
+  // Sécurité Fermeture
   if (!isOpenNow && !config.maintenanceMode) {
      return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
@@ -126,12 +125,11 @@ const Checkout = () => {
     );
   }
 
-  // --- FONCTION RECHERCHE ADRESSE (Nominatim) ---
+  // --- RECHERCHE ADRESSE ---
   const handleAddressSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
     try {
-      // On ajoute "Pointe-Noire" pour affiner la recherche
       const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}, Pointe-Noire, Congo&limit=1`);
       
       if (response.data && response.data.length > 0) {
@@ -141,9 +139,8 @@ const Checkout = () => {
         
         const newPos = { lat, lng };
         setGpsLocation(newPos);
-        setMapCenter([lat, lng]); // Bouge la carte
+        setMapCenter([lat, lng]); 
         
-        // Calcul distance immédiat
         const R = 6371; 
         const dLat = (lat - config.bakeryLocation.lat) * (Math.PI/180);
         const dLon = (lng - config.bakeryLocation.lng) * (Math.PI/180);
@@ -173,17 +170,22 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Création de l'objet commande
+      // Construction de l'adresse texte pour l'Admin
+      let finalAddressString = "Retrait Boutique";
+      if (formData.method === 'Livraison') {
+        // On combine la recherche texte et les détails
+        finalAddressString = searchQuery 
+          ? `${searchQuery} ${formData.addressDetails ? '(' + formData.addressDetails + ')' : ''}`
+          : `Position GPS Carte ${formData.addressDetails ? '(' + formData.addressDetails + ')' : ''}`;
+      }
+
       const orderData = {
         code: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
         customer: {
           name: formData.name,
           phone: formData.phone,
           location: formData.method === 'Livraison' ? { lat: gpsLocation.lat, lng: gpsLocation.lng } : null,
-          // IMPORTANT : On concatène pour avoir une adresse lisible
-          addressText: formData.method === 'Livraison' 
-             ? (searchQuery + (formData.addressDetails ? ', ' + formData.addressDetails : '')) 
-             : "Retrait Boutique"
+          address: finalAddressString // CORRECTION : On utilise 'address' pour que l'admin le voie
         },
         items: cartItems,
         details: {
@@ -193,27 +195,21 @@ const Checkout = () => {
           finalTotal: finalTotal,
           method: formData.method,
           paymentMethod: formData.payment,
-          scheduledDate: formData.date,
-          scheduledTime: formData.time,
+          scheduledDate: formData.method === 'Retrait' ? formData.date : null, // Date seulement si retrait
+          scheduledTime: formData.method === 'Retrait' ? formData.time : null, // Heure seulement si retrait
           notes: formData.notes
         },
         status: 'En attente',
         createdAt: serverTimestamp(),
       };
 
-      // 1. Envoi à Firebase
       await addDoc(collection(db, "orders"), orderData);
-      
-      // 2. Vider le panier
       clearCart();
-      
-      // 3. REDIRECTION VERS LA CONFIRMATION (Au lieu de l'alert)
-      // On passe "orderData" via le state pour l'afficher sur la page suivante
       navigate('/confirmation', { state: { order: orderData } });
 
     } catch (error) {
       console.error(error);
-      alert("Une erreur est survenue. Vérifiez votre connexion.");
+      alert("Une erreur est survenue.");
     } finally {
       setLoading(false);
     }
@@ -230,10 +226,10 @@ const Checkout = () => {
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* --- COLONNE GAUCHE : FORMULAIRE --- */}
+          {/* --- COLONNE GAUCHE --- */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* 1. Informations Personnelles */}
+            {/* 1. Infos Perso */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <User size={20} className="text-brand-brown"/> Vos Coordonnées
@@ -250,104 +246,92 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* 2. Mode de Réception (Livraison / Retrait) */}
+            {/* 2. Livraison / Retrait */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Truck size={20} className="text-brand-brown"/> Mode de réception
               </h2>
               
-              <div className="flex gap-4 mb-6">
-                <button type="button" onClick={() => setFormData({...formData, method: 'Livraison'})} className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 ${formData.method === 'Livraison' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
-                  <Truck size={18}/> Livraison
-                </button>
-                <button type="button" onClick={() => setFormData({...formData, method: 'Retrait'})} className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 ${formData.method === 'Retrait' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
-                  <ShoppingBag size={18}/> Retrait Boutique
-                </button>
-              </div>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
+                  <button type="button" onClick={() => setFormData({...formData, method: 'Livraison'})} className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 text-sm sm:text-base ${formData.method === 'Livraison' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
+                    <Truck size={18} className="shrink-0"/> Livraison
+                  </button>
+                  <button type="button" onClick={() => setFormData({...formData, method: 'Retrait'})} className={`w-full sm:flex-1 py-3 px-4 rounded-xl border-2 font-bold transition flex items-center justify-center gap-2 text-sm sm:text-base ${formData.method === 'Retrait' ? 'border-brand-brown bg-brand-brown/10 text-brand-brown' : 'border-gray-100 text-gray-500'}`}>
+                    <ShoppingBag size={18} className="shrink-0"/> Retrait Boutique
+                  </button>
+                </div>
 
-              {/* --- IF LIVRAISON : RECHERCHE + CARTE --- */}
+              {/* CARTE (Seulement si Livraison) */}
               {formData.method === 'Livraison' && (
                 <div className="animate-fade-in space-y-4">
-                  
-                  {/* Barre de Recherche */}
-                  <div className="relative">
-                    <label className="text-sm font-bold text-gray-600 mb-1 block">Rechercher votre quartier / rue</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Ex: Marché Tié-Tié, Pointe-Noire..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 border p-3 rounded-lg pl-10"
-                      />
-                      <Search className="absolute left-3 top-9 text-gray-400" size={18}/>
-                      <button 
-                        type="button"
-                        onClick={handleAddressSearch}
-                        className="bg-gray-800 text-white px-4 rounded-lg font-bold"
-                        disabled={isSearching}
-                      >
+                  <div className="w-full">
+                    <label className="text-sm font-bold text-gray-600 mb-2 block">Rechercher votre quartier / rue</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <input 
+                          type="text" 
+                          placeholder="Ex: Marché Tié-Tié, Pointe-Noire..." 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full border border-gray-300 p-3 rounded-xl pl-10 focus:ring-2 focus:ring-brand-brown outline-none transition"
+                        />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18}/>
+                      </div>
+                      <button type="button" onClick={handleAddressSearch} disabled={isSearching} className="bg-gray-800 hover:bg-gray-700 text-white py-3 px-6 rounded-xl font-bold transition flex items-center justify-center sm:w-auto w-full">
                         {isSearching ? '...' : 'Chercher'}
                       </button>
                     </div>
                   </div>
 
-                  {/* Carte */}
                   <div className="h-64 rounded-xl overflow-hidden border-2 border-gray-200 relative z-0">
                     <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
                       <MapUpdater center={mapCenter} />
-                      
-                      {/* Marqueur Boutique */}
-                      <Marker position={[config.bakeryLocation.lat, config.bakeryLocation.lng]}>
-                        <Popup>La Pâtisserie</Popup>
-                      </Marker>
-                      
-                      {/* Marqueur Client (Interactif) */}
-                      <LocationMarker 
-                        setPosition={setGpsLocation} 
-                        setDistance={setDeliveryDistance} 
-                        bakeryLoc={config.bakeryLocation} 
-                      />
+                      <Marker position={[config.bakeryLocation.lat, config.bakeryLocation.lng]}><Popup>La Pâtisserie</Popup></Marker>
+                      <LocationMarker setPosition={setGpsLocation} setDistance={setDeliveryDistance} bakeryLoc={config.bakeryLocation} />
                     </MapContainer>
                   </div>
 
-                  {/* Résultat Distance */}
                   <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg text-blue-800 text-sm">
                     <span>{gpsLocation ? "Position validée" : "Cliquez sur la carte pour préciser"}</span>
                     {gpsLocation && <span className="font-bold">{deliveryDistance.toFixed(2)} km (+{deliveryCost} FCFA)</span>}
                   </div>
 
-                  <input 
-                    type="text" 
-                    placeholder="Précisions (Numéro de porte, couleur maison...)" 
-                    value={formData.addressDetails}
-                    onChange={e=>setFormData({...formData, addressDetails: e.target.value})}
-                    className="w-full border p-3 rounded-lg"
-                  />
+                  <input type="text" placeholder="Précisions (Numéro de porte, couleur maison...)" value={formData.addressDetails} onChange={e=>setFormData({...formData, addressDetails: e.target.value})} className="w-full border p-3 rounded-lg"/>
                 </div>
               )}
             </div>
 
-            {/* 3. Date & Paiement */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Calendar size={18}/> Quand ?</h3>
-                <input type="date" className="w-full border p-3 rounded-lg mb-2" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})}/>
-                <input type="time" className="w-full border p-3 rounded-lg" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})}/>
+            {/* 3. Date & Heure (SEULEMENT SI RETRAIT) */}
+            {formData.method === 'Retrait' && (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-fade-in">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Calendar size={18}/> Quand souhaitez-vous passer ?</h3>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <label className="text-xs font-bold text-gray-500 mb-1 block">Date</label>
+                     <input required type="date" className="w-full border p-3 rounded-lg" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})}/>
+                   </div>
+                   <div>
+                     <label className="text-xs font-bold text-gray-500 mb-1 block">Heure</label>
+                     <input required type="time" className="w-full border p-3 rounded-lg" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})}/>
+                   </div>
+                </div>
               </div>
-              
-              <div>
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><CreditCard size={18}/> Paiement</h3>
-                <select className="w-full border p-3 rounded-lg bg-white" value={formData.payment} onChange={e=>setFormData({...formData, payment: e.target.value})}>
-                  <option value="Espèces">Espèces à la livraison</option>
-                  <option value="Mobile Money">Airtel Money / MTN MoMo</option>
-                </select>
-              </div>
-            </div>
+            )}
+            
+            {/* 4. Paiement & Notes */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-               <label className="block text-sm font-bold text-gray-700 mb-1">Message pour la pâtisserie (Optionnel)</label>
-               <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-brown/20" placeholder="Ex: Anniversaire, Allergies..."/>
+               <div className="mb-4">
+                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><CreditCard size={18}/> Paiement</h3>
+                 <select className="w-full border p-3 rounded-lg bg-white" value={formData.payment} onChange={e=>setFormData({...formData, payment: e.target.value})}>
+                   <option value="Espèces">Espèces à la livraison/réception</option>
+                   <option value="Mobile Money">Airtel Money / MTN MoMo</option>
+                 </select>
+               </div>
+               <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Message pour la pâtisserie (Optionnel)</label>
+                  <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-brown/20" placeholder="Ex: Anniversaire, Allergies..."/>
+               </div>
             </div>
           </div>
 
@@ -356,27 +340,38 @@ const Checkout = () => {
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
               <h2 className="text-xl font-serif font-bold text-gray-800 mb-6 pb-4 border-b">Résumé de commande</h2>
               
-              {/* Liste des articles (Restauration demandée) */}
               <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {cartItems.map((item, index) => (
                   <div key={index} className="flex justify-between items-start text-sm">
                     <div>
                       <span className="font-bold text-gray-700">{item.quantity}x</span> {item.name}
-                      {item.variant && <div className="text-xs text-gray-400">{item.variant}</div>}
                     </div>
                     <span className="font-medium">{(item.price * item.quantity).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Calculs */}
+              {/* Récap Adresse / Mode */}
+              <div className="bg-gray-50 p-3 rounded-lg mb-4 text-xs space-y-2">
+                 <div className="flex justify-between">
+                    <span className="text-gray-500">Mode :</span>
+                    <span className="font-bold text-gray-800">{formData.method}</span>
+                 </div>
+                 {formData.method === 'Livraison' && (
+                   <div>
+                      <span className="text-gray-500 block mb-1">Adresse :</span>
+                      <span className="font-medium text-gray-800 block truncate">
+                        {searchQuery || "Position sur carte"}
+                      </span>
+                   </div>
+                 )}
+              </div>
+
               <div className="space-y-2 pt-4 border-t border-gray-100 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Sous-total</span>
                   <span>{cartTotal.toLocaleString()} FCFA</span>
                 </div>
-                
-                {/* Condition d'affichage livraison */}
                 {formData.method === 'Livraison' ? (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span className="flex items-center gap-1"><Truck size={14}/> Livraison ({deliveryDistance.toFixed(1)} km)</span>
@@ -390,7 +385,6 @@ const Checkout = () => {
                 )}
               </div>
 
-              {/* Total Final */}
               <div className="mt-6 pt-4 border-t-2 border-dashed border-gray-200">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold text-gray-800">Total à payer</span>
@@ -405,10 +399,6 @@ const Checkout = () => {
               >
                 {loading ? 'Validation en cours...' : 'Confirmer la commande'}
               </button>
-              
-              <p className="text-xs text-center text-gray-400 mt-4">
-                En confirmant, vous acceptez de payer à la réception.
-              </p>
             </div>
           </div>
 

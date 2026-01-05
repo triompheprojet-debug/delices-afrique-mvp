@@ -249,7 +249,7 @@ const Orders = () => {
                          
                          {isDelivery ? (
                            <>
-                             <p className="text-gray-800 font-medium mb-3">{order.customer?.addressText || "Adresse non spécifiée"}</p>
+                             <p className="text-gray-800 font-medium mb-3">{order.customer?.address || "Adresse non spécifiée"}</p>
                              {/* BOUTON GPS IMPORTANȚ */}
                              {order.customer?.location && (
                                <button 

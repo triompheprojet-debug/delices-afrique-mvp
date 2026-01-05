@@ -149,53 +149,50 @@ const Home = () => {
         </div>
       </section>
 
-      {/* NOS COUPS DE CŒUR (Carrousel) */}
-      <section className="py-8 mb-12">
+{/* 3. NOS COUPS DE CŒUR (Carrousel Dynamique) */}
+      <section className="py-12 mb-12">
         <div className="container mx-auto px-4">
-          <div className="flex flex-row justify-between items-end mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
              <div>
-                <span className="text-brand-red font-bold text-xs tracking-widest uppercase">Nos Vedettes</span>
-                <h2 className="text-2xl md:text-4xl font-serif font-bold text-brand-brown mt-1">À la Une</h2>
+                <span className="text-brand-red font-bold text-sm tracking-widest uppercase">Nos Vedettes</span>
+                <h2 className="text-4xl font-serif font-bold text-brand-brown mt-2">Les Incontournables</h2>
              </div>
              <div className="flex gap-2">
-                <button onClick={prevSlide} className="p-2 rounded-full border border-gray-300 hover:bg-brand-brown hover:text-white transition"><ChevronLeft size={18}/></button>
-                <button onClick={nextSlide} className="p-2 rounded-full border border-gray-300 hover:bg-brand-brown hover:text-white transition"><ChevronRight size={18}/></button>
+                <button onClick={prevSlide} className="p-3 rounded-full border border-gray-300 hover:bg-brand-brown hover:text-white hover:border-brand-brown transition"><ChevronLeft size={20}/></button>
+                <button onClick={nextSlide} className="p-3 rounded-full border border-gray-300 hover:bg-brand-brown hover:text-white hover:border-brand-brown transition"><ChevronRight size={20}/></button>
              </div>
           </div>
           
-          {/* GRID : 
-             - grid-cols-2 sur mobile (pour afficher 2 produits côte à côte)
-             - gap-3 sur mobile (espacement réduit pour que ça rentre)
-          */}
-          <div className="min-h-[300px]">
+          {/* ZONE DU CARROUSEL */}
+          <div className="min-h-[400px]">
             {loading ? (
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               // SQUELETTE DE CHARGEMENT
+               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                  {[1,2,3,4].map(i => (
-                   <div key={i} className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>
+                   <div key={i} className="h-80 bg-gray-200 rounded-2xl animate-pulse"></div>
                  ))}
                </div>
             ) : featuredProducts.length > 0 ? (
-               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 animate-fade-in">
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
                   {visibleProducts.map((product) => (
-                     <div key={product.id} className="transform transition-all duration-500">
-                        {/* On passe une prop "compact" au ProductCard si on veut ajuster l'affichage interne (optionnel) */}
+                     <div key={product.id} className="transform transition-all duration-500 hover:-translate-y-2">
                         <ProductCard product={product} />
                      </div>
                   ))}
                </div>
             ) : (
-               <div className="text-center py-12 bg-white rounded-xl border border-dashed">
-                 <p className="text-gray-500 text-sm">Chargement des délices...</p>
+               <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
+                 <p className="text-gray-500">Nos vitrines sont en cours de remplissage...</p>
                </div>
             )}
           </div>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-12">
             <Link 
               to="/menu" 
-              className="inline-flex items-center gap-2 text-brand-brown font-bold text-sm md:text-base hover:underline underline-offset-4 decoration-brand-red transition"
+              className="inline-flex items-center gap-3 text-brand-brown font-bold text-lg hover:underline underline-offset-8 decoration-2 decoration-brand-red transition group"
             >
-              Voir tout le menu <ArrowRight size={16}/>
+              Explorer toute la carte <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
             </Link>
           </div>
         </div>
@@ -208,19 +205,25 @@ const Home = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16">
-             <div className="lg:w-1/2">
-                <div className="relative">
-                   <img 
-                     src="https://images.unsplash.com/photo-1615690055356-14dc400892d6?q=80&w=1114&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                     alt="Chef" 
-                     className="rounded-3xl shadow-2xl w-full object-cover h-[500px]"
-                   />
-                   <div className="absolute -bottom-6 -right-6 bg-brand-beige text-brand-brown p-6 rounded-2xl shadow-lg hidden md:block">
-                      <p className="font-serif font-bold text-3xl">15+</p>
-                      <p className="text-sm font-bold uppercase tracking-wide">Années d'expérience</p>
-                   </div>
+            <div className="lg:w-1/2">
+              <div className="relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1615690055356-14dc400892d6?q=80&w=1114&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                  alt="Chef" 
+                  className="rounded-3xl shadow-2xl w-full object-cover 
+                            h-[350px] sm:h-[450px] md:h-[500px] lg:h-[600px] 
+                            transition-all duration-300"
+                />
+                
+                {/* Badge d'expérience ajusté pour ne pas sortir de l'écran sur mobile */}
+                <div className="absolute -bottom-2 -right-2 sm:-bottom-4 sm:-right-4 md:-bottom-6 md:-right-6 
+                                bg-brand-beige text-brand-brown p-4 md:p-6 
+                                rounded-2xl shadow-lg z-10">
+                  <p className="font-serif font-bold text-2xl md:text-3xl">15+</p>
+                  <p className="text-[10px] md:text-sm font-bold uppercase tracking-wide">Années d'expérience</p>
                 </div>
-             </div>
+              </div>
+            </div>
              
              <div className="lg:w-1/2 space-y-6">
                 <div className="flex items-center gap-2 text-brand-beige font-bold uppercase tracking-widest text-sm">

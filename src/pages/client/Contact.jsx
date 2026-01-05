@@ -79,28 +79,48 @@ const Contact = () => {
         <div className="grid lg:grid-cols-2 gap-8 mb-12">
           
           {/* Formulaire de contact */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm order-2 lg:order-1">
+          {/* AJUSTEMENT 1 : p-6 pour mobile, md:p-8 pour ordis pour gagner de la place */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm order-2 lg:order-1">
             <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6">Envoyez-nous un message</h2>
+            
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div className="grid grid-cols-2 gap-4">
+              
+              {/* AJUSTEMENT 2 : grid-cols-1 (mobile) -> md:grid-cols-2 (ordi) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                  <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" placeholder="Votre nom" />
+                  <input 
+                    type="text" 
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" 
+                    placeholder="Votre nom" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                  <input type="tel" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" placeholder="Votre numéro" />
+                  <input 
+                    type="tel" 
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" 
+                    placeholder="Votre numéro" 
+                  />
                 </div>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email (optionnel)</label>
-                <input type="email" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" placeholder="votre@email.com" />
+                <input 
+                  type="email" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" 
+                  placeholder="votre@email.com" 
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" placeholder="Bonjour, je voudrais commander pour un anniversaire..."></textarea>
+                <textarea 
+                  rows="4" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-brown/50 focus:border-brand-brown transition" 
+                  placeholder="Bonjour, je voudrais commander pour un anniversaire..."
+                ></textarea>
               </div>
 
               <button className="w-full bg-brand-brown text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2 group">
