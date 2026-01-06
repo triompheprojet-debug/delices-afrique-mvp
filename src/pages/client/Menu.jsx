@@ -52,7 +52,7 @@ const Menu = () => {
               <Sparkles size={14} /> Fait Maison
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-white">Notre Carte</h1>
+          <h4 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-white">Notre Carte</h4>
           <p className="text-brand-beige text-sm md:text-lg max-w-xl mx-auto italic px-4">
             "Chaque bouchée raconte une histoire de passion et d'authenticité."
           </p>
