@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useConfig } from '../../context/ConfigContext';
 import { MapPin, Phone, Mail, Clock, Send, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Contact = () => {
   const { config } = useConfig();
@@ -10,33 +11,72 @@ const Contact = () => {
   const encodedAddress = encodeURIComponent(config.address || "Pointe-Noire, Congo");
   const mapSrc = `https://maps.google.com/maps?q=${encodedAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
+  // Variantes pour l'animation séquentielle des cartes
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
       
       {/* --- EN-TÊTE --- */}
       <div className="bg-brand-brown text-white py-16 text-center relative overflow-hidden">
-        {/* Cercles décoratifs... */}
-        <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 right-0 w-48 h-48 bg-brand-beige/10 rounded-full translate-x-1/3 translate-y-1/3"></div>
+        {/* Cercles décoratifs animés */}
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"
+        ></motion.div>
+        <motion.div 
+          animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+          className="absolute bottom-0 right-0 w-48 h-48 bg-brand-beige/10 rounded-full translate-x-1/3 translate-y-1/3"
+        ></motion.div>
         
         {/* --- CORRECTION ICI : Ajout de 'text-white' --- */}
-        <h4 className="text-4xl font-serif font-bold relative z-10 text-white">
+        <motion.h4 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl font-sans-serif font-bold relative z-10 text-white"
+        >
           Contactez-nous
-        </h4>
+        </motion.h4>
         
-        <p className="mt-4 text-brand-beige text-lg max-w-2xl mx-auto px-4 relative z-10">
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-4 text-brand-beige text-lg max-w-2xl mx-auto px-4 relative z-10"
+        >
           Une envie particulière ? Une commande spéciale ? 
           Nous sommes à votre écoute pour rendre vos moments gourmands inoubliables.
-        </p>
+        </motion.p>
       </div>
 
       <div className="container mx-auto px-4 -mt-8 relative z-20">
         
         {/* --- CARTES D'INFO (GRID) --- */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid md:grid-cols-3 gap-6 mb-12"
+        >
           
           {/* Carte Téléphone */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
+          <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
             <div className="w-12 h-12 bg-brand-beige/20 text-brand-brown rounded-full flex items-center justify-center mb-4">
               <Phone size={24} />
             </div>
@@ -48,10 +88,10 @@ const Contact = () => {
             <span className="text-xs text-green-600 font-semibold mt-1 bg-green-50 px-2 py-1 rounded-full">
               WhatsApp disponible
             </span>
-          </div>
+          </motion.div>
 
           {/* Carte Adresse */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
+          <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
             <div className="w-12 h-12 bg-brand-beige/20 text-brand-brown rounded-full flex items-center justify-center mb-4">
               <MapPin size={24} />
             </div>
@@ -60,10 +100,10 @@ const Contact = () => {
             <p className="font-medium text-gray-800 px-4">
               {config.address}
             </p>
-          </div>
+          </motion.div>
 
           {/* Carte Horaires */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
+          <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center text-center">
             <div className="w-12 h-12 bg-brand-beige/20 text-brand-brown rounded-full flex items-center justify-center mb-4">
               <Clock size={24} />
             </div>
@@ -72,15 +112,21 @@ const Contact = () => {
             <div className="text-brand-brown font-bold text-lg border-2 border-brand-beige/30 px-4 py-1 rounded-lg">
               {config.openingTime} - {config.closingTime}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* --- SECTION CARTE & FORMULAIRE --- */}
         <div className="grid lg:grid-cols-2 gap-8 mb-12">
           
           {/* Formulaire de contact */}
           {/* AJUSTEMENT 1 : p-6 pour mobile, md:p-8 pour ordis pour gagner de la place */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm order-2 lg:order-1">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="bg-white p-6 md:p-8 rounded-2xl shadow-sm order-2 lg:order-1"
+          >
             <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6">Envoyez-nous un message</h2>
             
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -123,15 +169,25 @@ const Contact = () => {
                 ></textarea>
               </div>
 
-              <button className="w-full bg-brand-brown text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2 group">
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-brand-brown text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2 group"
+              >
                 <Send size={18} className="group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
                 Envoyer le message
-              </button>
+              </motion.button>
             </form>
-          </div>
+          </motion.div>
 
           {/* Google Maps Embed */}
-          <div className="bg-white p-2 rounded-2xl shadow-sm h-[500px] lg:h-auto order-1 lg:order-2 flex flex-col">
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="bg-white p-2 rounded-2xl shadow-sm h-[500px] lg:h-auto order-1 lg:order-2 flex flex-col"
+          >
             <div className="flex-grow w-full h-full rounded-xl overflow-hidden relative">
                {/* L'iframe Google Maps */}
                <iframe 
@@ -158,7 +214,7 @@ const Contact = () => {
                  Ouvrir GPS <ExternalLink size={14}/>
                </a>
             </div>
-          </div>
+          </motion.div>
 
         </div>
 

@@ -14,8 +14,10 @@ import {
   CreditCard, 
   Search, 
   CheckCircle,
-  Clock
+  Clock,
+  Check
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- IMPORTS LEAFLET (Carte) ---
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
@@ -44,8 +46,8 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// Composant Marqueur Interactif
-const LocationMarker = ({ setPosition, setDistance, bakeryLoc }) => {
+// Composant Marqueur Interactif avec Reverse Geocoding
+const LocationMarker = ({ setPosition, setDistance, bakeryLoc, onAddressFound }) => {
   const [markerPos, setMarkerPos] = useState(null);
   
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -60,12 +62,27 @@ const LocationMarker = ({ setPosition, setDistance, bakeryLoc }) => {
   };
 
   useMapEvents({
-    click(e) {
+    async click(e) {
+      const { lat, lng } = e.latlng;
       setMarkerPos(e.latlng);
       setPosition(e.latlng);
+      
+      // Calcul distance
       if (bakeryLoc) {
-        const dist = calculateDistance(bakeryLoc.lat, bakeryLoc.lng, e.latlng.lat, e.latlng.lng);
+        const dist = calculateDistance(bakeryLoc.lat, bakeryLoc.lng, lat, lng);
         setDistance(dist);
+      }
+
+      // Reverse Geocoding (Trouver l'adresse via Clic)
+      try {
+        const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        if (response.data && response.data.display_name) {
+          // On nettoie un peu l'adresse pour garder le pertinent
+          const address = response.data.display_name.split(',').slice(0, 3).join(',');
+          onAddressFound(address);
+        }
+      } catch (error) {
+        console.error("Erreur reverse geocoding", error);
       }
     },
   });
@@ -110,10 +127,20 @@ const Checkout = () => {
   if (!isOpenNow && !config.maintenanceMode) {
      return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6 text-red-600">
+        <motion.div 
+          initial={{ scale: 0 }} 
+          animate={{ scale: 1 }} 
+          className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6 text-red-600"
+        >
           <Clock size={40} />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">La boutique est fermée</h2>
+        </motion.div>
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl font-bold text-gray-800 mb-2"
+        >
+          La boutique est fermée
+        </motion.h2>
         <p className="text-gray-600 mb-6 max-w-md">
           Nous ne pouvons pas prendre votre commande pour le moment.
           Nos horaires sont de <span className="font-bold">{config.openingTime}</span> à <span className="font-bold">{config.closingTime}</span>.
@@ -125,7 +152,7 @@ const Checkout = () => {
     );
   }
 
-  // --- RECHERCHE ADRESSE ---
+  // --- RECHERCHE ADRESSE (Texte -> Coordonnées) ---
   const handleAddressSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
@@ -185,7 +212,7 @@ const Checkout = () => {
           name: formData.name,
           phone: formData.phone,
           location: formData.method === 'Livraison' ? { lat: gpsLocation.lat, lng: gpsLocation.lng } : null,
-          address: finalAddressString // CORRECTION : On utilise 'address' pour que l'admin le voie
+          address: finalAddressString 
         },
         items: cartItems,
         details: {
@@ -195,8 +222,8 @@ const Checkout = () => {
           finalTotal: finalTotal,
           method: formData.method,
           paymentMethod: formData.payment,
-          scheduledDate: formData.method === 'Retrait' ? formData.date : null, // Date seulement si retrait
-          scheduledTime: formData.method === 'Retrait' ? formData.time : null, // Heure seulement si retrait
+          scheduledDate: formData.method === 'Retrait' ? formData.date : null,
+          scheduledTime: formData.method === 'Retrait' ? formData.time : null, 
           notes: formData.notes
         },
         status: 'En attente',
@@ -219,10 +246,19 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 pb-32">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-serif font-bold text-gray-800 mb-8 flex items-center gap-2">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-6xl mx-auto"
+      >
+        <motion.h1 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-3xl font-serif font-bold text-gray-800 mb-8 flex items-center gap-2"
+        >
           <CheckCircle className="text-brand-brown"/> Finaliser la commande
-        </h1>
+        </motion.h1>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -230,7 +266,12 @@ const Checkout = () => {
           <div className="lg:col-span-2 space-y-6">
             
             {/* 1. Infos Perso */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+            >
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <User size={20} className="text-brand-brown"/> Vos Coordonnées
               </h2>
@@ -244,10 +285,15 @@ const Checkout = () => {
                    <input required type="tel" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full border p-3 rounded-lg mt-1"/>
                  </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* 2. Livraison / Retrait */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+            >
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Truck size={20} className="text-brand-brown"/> Mode de réception
               </h2>
@@ -262,10 +308,17 @@ const Checkout = () => {
                 </div>
 
               {/* CARTE (Seulement si Livraison) */}
+              <AnimatePresence>
               {formData.method === 'Livraison' && (
-                <div className="animate-fade-in space-y-4">
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 overflow-hidden"
+                >
                   <div className="w-full">
-                    <label className="text-sm font-bold text-gray-600 mb-2 block">Rechercher votre quartier / rue</label>
+                    <label className="text-sm font-bold text-gray-600 mb-2 block">Rechercher votre quartier / rue ou cliquer sur la carte</label>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <div className="relative flex-1">
                         <input 
@@ -277,8 +330,23 @@ const Checkout = () => {
                         />
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18}/>
                       </div>
-                      <button type="button" onClick={handleAddressSearch} disabled={isSearching} className="bg-gray-800 hover:bg-gray-700 text-white py-3 px-6 rounded-xl font-bold transition flex items-center justify-center sm:w-auto w-full">
-                        {isSearching ? '...' : 'Chercher'}
+                      
+                      {/* BOUTON DYNAMIQUE : Change si GPS Validé */}
+                      <button 
+                        type="button" 
+                        onClick={handleAddressSearch} 
+                        disabled={isSearching} 
+                        className={`py-3 px-6 rounded-xl font-bold transition flex items-center justify-center sm:w-auto w-full text-white shadow-md
+                          ${gpsLocation 
+                            ? 'bg-green-600 hover:bg-green-700' // Style si Validé
+                            : 'bg-gray-800 hover:bg-gray-700'   // Style par défaut
+                          }`}
+                      >
+                        {isSearching ? '...' : gpsLocation ? (
+                          <><Check size={18} className="mr-2"/> Adresse Validée</>
+                        ) : (
+                          'Chercher'
+                        )}
                       </button>
                     </div>
                   </div>
@@ -288,23 +356,39 @@ const Checkout = () => {
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
                       <MapUpdater center={mapCenter} />
                       <Marker position={[config.bakeryLocation.lat, config.bakeryLocation.lng]}><Popup>La Pâtisserie</Popup></Marker>
-                      <LocationMarker setPosition={setGpsLocation} setDistance={setDeliveryDistance} bakeryLoc={config.bakeryLocation} />
+                      <LocationMarker 
+                        setPosition={setGpsLocation} 
+                        setDistance={setDeliveryDistance} 
+                        bakeryLoc={config.bakeryLocation}
+                        onAddressFound={(addr) => setSearchQuery(addr)} // Callback pour remplir l'input au clic
+                      />
                     </MapContainer>
                   </div>
 
-                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg text-blue-800 text-sm">
-                    <span>{gpsLocation ? "Position validée" : "Cliquez sur la carte pour préciser"}</span>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={`flex items-center justify-between p-3 rounded-lg text-sm transition-colors ${gpsLocation ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-blue-50 text-blue-800'}`}
+                  >
+                    <span>{gpsLocation ? "Position validée" : "Cliquez sur la carte pour préciser ou utilisez la recherche"}</span>
                     {gpsLocation && <span className="font-bold">{deliveryDistance.toFixed(2)} km (+{deliveryCost} FCFA)</span>}
-                  </div>
+                  </motion.div>
 
                   <input type="text" placeholder="Précisions (Numéro de porte, couleur maison...)" value={formData.addressDetails} onChange={e=>setFormData({...formData, addressDetails: e.target.value})} className="w-full border p-3 rounded-lg"/>
-                </div>
+                </motion.div>
               )}
-            </div>
+              </AnimatePresence>
+            </motion.div>
 
             {/* 3. Date & Heure (SEULEMENT SI RETRAIT) */}
+            <AnimatePresence>
             {formData.method === 'Retrait' && (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-fade-in">
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Calendar size={18}/> Quand souhaitez-vous passer ?</h3>
                 <div className="grid grid-cols-2 gap-4">
                    <div>
@@ -316,11 +400,17 @@ const Checkout = () => {
                      <input required type="time" className="w-full border p-3 rounded-lg" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})}/>
                    </div>
                 </div>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
             
             {/* 4. Paiement & Notes */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.3 }}
+               className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+            >
                <div className="mb-4">
                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><CreditCard size={18}/> Paiement</h3>
                  <select className="w-full border p-3 rounded-lg bg-white" value={formData.payment} onChange={e=>setFormData({...formData, payment: e.target.value})}>
@@ -332,11 +422,16 @@ const Checkout = () => {
                   <label className="block text-sm font-bold text-gray-700 mb-1">Message pour la pâtisserie (Optionnel)</label>
                   <input type="text" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-brown/20" placeholder="Ex: Anniversaire, Allergies..."/>
                </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* --- COLONNE DROITE : RÉSUMÉ --- */}
-          <div className="h-fit space-y-6">
+          <motion.div 
+             initial={{ opacity: 0, x: 20 }}
+             animate={{ opacity: 1, x: 0 }}
+             transition={{ delay: 0.4 }}
+             className="h-fit space-y-6"
+          >
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
               <h2 className="text-xl font-serif font-bold text-gray-800 mb-6 pb-4 border-b">Résumé de commande</h2>
               
@@ -392,18 +487,20 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit" 
                 disabled={loading}
-                className="w-full mt-8 bg-brand-red text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-8 bg-brand-red text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700 transition transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Validation en cours...' : 'Confirmer la commande'}
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
 
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

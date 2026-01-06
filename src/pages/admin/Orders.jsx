@@ -120,7 +120,8 @@ const Orders = () => {
       </div>
 
       {/* --- BARRE DE CONTRÔLE (Sticky) --- */}
-      <div className="sticky top-2 z-30 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-3">
+      {/* Z-index réduit à 10 pour passer sous la sidebar (z-20 overlay, z-30 sidebar) */}
+      <div className="sticky top-2 z-10 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-3">
         {/* Recherche */}
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -250,7 +251,7 @@ const Orders = () => {
                          {isDelivery ? (
                            <>
                              <p className="text-gray-800 font-medium mb-3">{order.customer?.address || "Adresse non spécifiée"}</p>
-                             {/* BOUTON GPS IMPORTANȚ */}
+                             {/* BOUTON GPS IMPORTANÈ */}
                              {order.customer?.location && (
                                <button 
                                  onClick={() => openGps(order.customer.location.lat, order.customer.location.lng)}
