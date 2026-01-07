@@ -1,26 +1,28 @@
 import React from 'react';
 import { ShoppingBag, Star } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { motion } from 'framer-motion'; // <--- IMPORT
+import { motion } from 'framer-motion';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onClickImage }) => {
   const { addToCart } = useCart();
 
   return (
-    // On transforme la div principale en motion.div
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      whileHover={{ y: -10 }} // La carte monte de 10px au survol
+      whileHover={{ y: -10 }} 
       className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col"
     >
       
-      {/* IMAGE */}
-      <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
+      {/* IMAGE CLIQUABLE */}
+      <div 
+        className="relative h-48 sm:h-56 overflow-hidden bg-gray-100 cursor-zoom-in"
+        onClick={() => onClickImage && onClickImage(product)} // Déclenche l'ouverture
+      >
         <motion.img 
-          whileHover={{ scale: 1.1 }} // Zoom image au survol
+          whileHover={{ scale: 1.1 }} 
           transition={{ duration: 0.6 }}
           src={product.image} 
           alt={product.name} 
@@ -44,13 +46,13 @@ const ProductCard = ({ product }) => {
 
         <h3 className="font-serif font-bold text-lg text-gray-800 mb-1 leading-tight">{product.name}</h3>
         <p className="text-gray-500 text-sm line-clamp-2 mb-3">{product.description || 'Délicieuse spécialité de la maison.'}</p>
-        {/* PRIX & BOUTON */}
+        
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
           <span className="text-xl font-bold text-brand-brown">{product.price.toLocaleString()} <span className="text-xs">FCFA</span></span>
           
           <motion.button 
-            whileTap={{ scale: 0.9 }} // Effet clic
-            whileHover={{ scale: 1.1, backgroundColor: "#E63946" }} // Effet hover (change en rouge)
+            whileTap={{ scale: 0.9 }} 
+            whileHover={{ scale: 1.1, backgroundColor: "#E63946" }} 
             onClick={() => product.inStock && addToCart(product)}
             disabled={!product.inStock}
             className={`

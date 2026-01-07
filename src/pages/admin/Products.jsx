@@ -146,64 +146,82 @@ const Products = () => {
 
   return (
     <div className="pb-32 max-w-7xl mx-auto px-4 sm:px-6">
-      
+              
       {/* --- EN-TÊTE & BARRE D'OUTILS --- */}
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 sticky top-2 z-20">
-        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-6">
+      <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 mb-4 md:mb-8 relative md:sticky md:top-2 z-20">
+        
+        {/* Ligne 1 : Titre + Bouton Ajout */}
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4 md:mb-6">
           <div>
-             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-               <div className="p-2 bg-brand-brown/10 text-brand-brown rounded-lg"><Package size={24}/></div>
-               Catalogue Produits
-             </h1>
-             <p className="text-sm text-gray-500 mt-1">{products.length} références, {filteredProducts.length} affichées</p>
+            <h1 className="text-lg md:text-2xl font-bold text-gray-800 flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-brand-brown/10 text-brand-brown rounded-lg">
+                  <Package size={20} className="md:w-6 md:h-6"/> 
+              </div>
+              Catalogue Produits
+            </h1>
+            <p className="text-xs md:text-sm text-gray-500 mt-1 ml-1">
+              {products.length} réf. ({filteredProducts.length} visibles)
+            </p>
           </div>
           
           <button 
               onClick={() => setIsAddModalOpen(true)} 
-              className="w-full lg:w-auto bg-brand-brown text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition shadow-lg font-bold"
+              className="w-full md:w-auto bg-brand-brown text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg md:rounded-xl flex items-center justify-center gap-2 hover:bg-gray-800 transition shadow-md font-bold text-sm md:text-base"
           >
-            <Plus size={20}/> Nouveau Produit
+            <Plus size={18} className="md:w-5 md:h-5"/> 
+            <span>Nouveau Produit</span>
           </button>
         </div>
 
-        {/* Barre de Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          {/* Recherche */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
+        {/* Ligne 2 : Barre de Filtres (Optimisée Mobile) */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center">
+          
+          {/* Recherche (Pleine largeur) */}
+          <div className="relative flex-1 w-full order-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
             <input 
               type="text" 
-              placeholder="Rechercher (ex: Croissant au beurre)..."
+              placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-brown/20 transition"
+              className="w-full pl-10 pr-3 py-2 md:py-3 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-brown/20 transition"
             />
           </div>
           
-          {/* Filtre Catégorie */}
-          <div className="relative w-full md:w-56">
-              <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
-              <select 
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-brown/20 appearance-none cursor-pointer"
-              >
-                  <option value="Tous">Toutes catégories</option>
-                  {config.categories?.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500"><svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-          </div>
+          {/* Groupe : Catégorie + Toggle (Sur la même ligne en mobile pour gagner de la place) */}
+          <div className="flex gap-2 order-2 md:w-auto">
+              {/* Filtre Catégorie */}
+              <div className="relative flex-1 md:w-56 h-full">
+                  <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
+                  <select 
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 md:py-3 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-brown/20 appearance-none cursor-pointer h-full"
+                  >
+                      <option value="Tous">Toutes</option>
+                      {config.categories?.map(cat => (
+                          <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                  </select>
+                  {/* Petite flèche custom */}
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
+                      <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  </div>
+              </div>
 
-          {/* Toggle Vue (Liste/Grille) */}
-          <div className="flex bg-gray-100 p-1 rounded-lg">
-            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition ${viewMode === 'list' ? 'bg-white shadow text-brand-brown' : 'text-gray-400'}`}><ListIcon size={20}/></button>
-            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition ${viewMode === 'grid' ? 'bg-white shadow text-brand-brown' : 'text-gray-400'}`}><LayoutGrid size={20}/></button>
+              {/* Toggle Vue */}
+              <div className="flex bg-gray-100 p-1 rounded-lg shrink-0 h-full items-center">
+                <button onClick={() => setViewMode('list')} className={`p-1.5 md:p-2 rounded-md transition ${viewMode === 'list' ? 'bg-white shadow text-brand-brown' : 'text-gray-400'}`}>
+                  <ListIcon size={18} className="md:w-5 md:h-5"/>
+                </button>
+                <button onClick={() => setViewMode('grid')} className={`p-1.5 md:p-2 rounded-md transition ${viewMode === 'grid' ? 'bg-white shadow text-brand-brown' : 'text-gray-400'}`}>
+                  <LayoutGrid size={18} className="md:w-5 md:h-5"/>
+                </button>
+              </div>
           </div>
         </div>
       </div>
-
+      
       {/* --- LISTE DES PRODUITS --- */}
       {loading ? (
         <div className="text-center py-20 text-gray-400 flex flex-col items-center gap-4"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-brown"></div>Chargement du catalogue...</div>

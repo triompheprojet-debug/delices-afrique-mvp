@@ -239,21 +239,26 @@ const Settings = () => {
              </div>
           </div>
 
-          {/* Formulaire d'ajout */}
-          <div className="flex gap-2 mb-6">
+          {/* Formulaire d'ajout responsive */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <input 
               type="text" 
               placeholder="Nouvelle catégorie (ex: Glaces)..." 
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-purple-200 outline-none transition"
+              className="w-full sm:flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-purple-200 outline-none transition shadow-sm"
             />
-            <button type="button" onClick={addCategory} className="bg-purple-600 text-white px-6 rounded-lg font-bold flex items-center gap-2 hover:bg-purple-700 active:scale-95 transition">
-              <Plus size={20}/> Ajouter
+            <button 
+              type="button" 
+              onClick={addCategory} 
+              className="w-full sm:w-auto bg-purple-600 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-purple-700 active:scale-95 transition shadow-sm"
+            >
+              <Plus size={20}/> 
+              <span>Ajouter</span>
             </button>
           </div>
 
-          {/* Liste des catégories */}
+          {/* Liste des catégories Responsive */}
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {(!config.categories || config.categories.length === 0) && (
               <p className="text-center text-gray-400 py-8 italic border-2 border-dashed border-gray-100 rounded-xl">
@@ -262,48 +267,58 @@ const Settings = () => {
             )}
 
             {config.categories?.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl group hover:bg-white hover:shadow-md transition-all duration-200">
+              <div key={cat.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl group hover:bg-white hover:shadow-md transition-all duration-200">
                 
-                {/* Mode Édition vs Mode Lecture */}
-                {editingId === cat.id ? (
-                    <div className="flex items-center gap-2 flex-1 mr-4">
-                        <input 
-                            autoFocus
-                            type="text" 
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="flex-1 border-2 border-purple-300 rounded-lg px-3 py-1.5 text-sm font-bold text-gray-800 focus:outline-none"
-                        />
-                        <button type="button" onClick={() => saveEdit(cat.id)} className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200"><Check size={16}/></button>
-                        <button type="button" onClick={() => setEditingId(null)} className="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200"><X size={16}/></button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-3">
-                        <span className="font-bold text-gray-800">{cat.name}</span>
-                        <button type="button" onClick={() => startEdit(cat)} className="text-gray-300 hover:text-purple-600 transition">
-                            <Edit2 size={14}/>
-                        </button>
-                    </div>
-                )}
+                {/* Conteneur principal qui change d'orientation selon l'écran */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                
+                  {/* ZONE GAUCHE : Nom ou Input d'édition */}
+                  {editingId === cat.id ? (
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 w-full">
+                          <input 
+                              autoFocus
+                              type="text" 
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="w-full sm:flex-1 border-2 border-purple-300 rounded-lg px-3 py-2 text-sm font-bold text-gray-800 focus:outline-none"
+                          />
+                          <div className="flex gap-2 justify-end">
+                              <button type="button" onClick={() => saveEdit(cat.id)} className="flex-1 sm:flex-none bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 flex items-center justify-center"><Check size={18}/></button>
+                              <button type="button" onClick={() => setEditingId(null)} className="flex-1 sm:flex-none bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 flex items-center justify-center"><X size={18}/></button>
+                          </div>
+                      </div>
+                  ) : (
+                      <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-800 break-words">{cat.name}</span>
+                          <button type="button" onClick={() => startEdit(cat)} className="text-gray-300 hover:text-purple-600 transition p-1">
+                              <Edit2 size={16}/>
+                          </button>
+                      </div>
+                  )}
 
-                {/* Actions Droite */}
-                <div className="flex items-center gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => toggleFeatured(cat.id)} 
-                    className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-bold border transition ${
-                        cat.isFeatured 
-                        ? 'bg-yellow-100 border-yellow-300 text-yellow-800 shadow-sm' 
-                        : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Star size={14} fill={cat.isFeatured ? "currentColor" : "none"} className={cat.isFeatured ? "text-yellow-500" : ""}/>
-                    {cat.isFeatured ? 'Visible' : 'Masqué'}
-                  </button>
-                  
-                  <button type="button" onClick={() => removeCategory(cat.id)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
-                    <Trash2 size={18}/>
-                  </button>
+                  {/* ZONE DROITE : Actions (Star & Delete) */}
+                  {/* On sépare cette zone pour qu'elle soit toujours accessible, même en mode édition si besoin, ou juste pour l'alignement */}
+                  {editingId !== cat.id && (
+                    <div className="flex items-center justify-end gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100">
+                      <button 
+                        type="button" 
+                        onClick={() => toggleFeatured(cat.id)} 
+                        className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg font-bold border transition ${
+                            cat.isFeatured 
+                            ? 'bg-yellow-100 border-yellow-300 text-yellow-800 shadow-sm' 
+                            : 'bg-white border-gray-200 text-gray-400 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Star size={16} fill={cat.isFeatured ? "currentColor" : "none"} className={cat.isFeatured ? "text-yellow-500" : ""}/>
+                        {/* Le texte "Visible/Masqué" disparait sur mobile pour gagner de la place */}
+                        <span className="hidden sm:inline">{cat.isFeatured ? 'Visible' : 'Masqué'}</span>
+                      </button>
+                      
+                      <button type="button" onClick={() => removeCategory(cat.id)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
+                        <Trash2 size={18}/>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
