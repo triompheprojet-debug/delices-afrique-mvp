@@ -13,7 +13,7 @@ const PartnerSales = () => {
 
   // 1. Récupération des données réelles
   useEffect(() => {
-    const sessionStr = sessionStorage.getItem('partnerSession');
+    const sessionStr = localStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
 

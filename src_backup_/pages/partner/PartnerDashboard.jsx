@@ -14,7 +14,7 @@ const PartnerDashboard = () => {
 
   // Récupération des données en temps réel
   useEffect(() => {
-    const sessionStr = sessionStorage.getItem('partnerSession');
+    const sessionStr = localStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
     

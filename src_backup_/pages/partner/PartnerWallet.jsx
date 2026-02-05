@@ -30,7 +30,7 @@ const PartnerWallet = () => {
   };
 
   useEffect(() => {
-    const sessionStr = sessionStorage.getItem('partnerSession');
+    const sessionStr = localStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
 

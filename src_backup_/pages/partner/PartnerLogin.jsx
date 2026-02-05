@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
@@ -11,24 +11,13 @@ const PartnerLogin = () => {
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [error, setError] = useState('');
 
-  // --- CORRECTION ---
-  useEffect(() => {
-    // 1. On vérifie si une session existe déjà
-    const existingSession = sessionStorage.getItem('partnerSession');
-    
-    // 2. Si oui, on le renvoie directement au Dashboard (pas besoin de se reconnecter)
-    if (existingSession) {
-      navigate('/partner/dashboard');
-    }
-    // Note : On ne fait plus de removeItem ici.
-  }, [navigate]);
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
+      // 1. Chercher l'utilisateur par téléphone (Clé unique)
       const q = query(collection(db, "partners"), where("phone", "==", formData.phone));
       const querySnapshot = await getDocs(q);
 
@@ -36,27 +25,30 @@ const PartnerLogin = () => {
         throw new Error("Ce numéro n'est associé à aucun compte partenaire.");
       }
 
+      // 2. Vérification Mot de passe
       const partnerDoc = querySnapshot.docs[0];
       const partnerData = partnerDoc.data();
 
+      // Vérification basique (Hachage à prévoir en prod)
       if (partnerData.password !== formData.password) {
         throw new Error("Mot de passe incorrect.");
       }
 
+      // Vérification si compte banni/suspendu (Section 5.2 de l'admin)
       if (partnerData.isActive === false) {
           throw new Error("Votre compte a été suspendu. Contactez l'administration.");
       }
 
+      // 3. Création Session
       const sessionData = { 
         id: partnerDoc.id, 
         fullName: partnerData.fullName,
         phone: partnerData.phone, 
         level: partnerData.level
       };
+      localStorage.setItem('partnerSession', JSON.stringify(sessionData));
 
-      // On utilise sessionStorage (s'efface quand on ferme le navigateur)
-      sessionStorage.setItem('partnerSession', JSON.stringify(sessionData));
-
+      // 4. Redirection vers le Dashboard
       navigate('/partner/dashboard');
 
     } catch (err) {
@@ -67,7 +59,6 @@ const PartnerLogin = () => {
     }
   };
 
-  // ... (Le reste du rendu JSX reste identique, assurez-vous juste d'importer ce qu'il faut)
   const handleForgotPassword = () => {
       alert("Veuillez contacter l'administration sur WhatsApp pour réinitialiser votre mot de passe.");
   };
@@ -90,7 +81,6 @@ const PartnerLogin = () => {
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
-          {/* Champs de formulaire identiques à votre fichier original */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Téléphone</label>
             <div className="relative">
@@ -113,6 +103,7 @@ const PartnerLogin = () => {
                 value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
               />
             </div>
+            {/* Lien Mot de passe oublié (Section 2.3) */}
             <div className="text-right mt-2">
                 <button type="button" onClick={handleForgotPassword} className="text-xs text-gray-400 hover:text-brand-brown transition">
                     Mot de passe oublié ?

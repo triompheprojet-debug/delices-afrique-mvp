@@ -9,30 +9,29 @@ const PartnerLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Vérification de sécurité
+  // Vérif session rapide
   React.useEffect(() => {
-    const session = sessionStorage.getItem('partnerSession');
-    
-    // Si pas de session ET qu'on n'est pas sur login/register -> Redirection Login
-    if (!session && !location.pathname.includes('register') && !location.pathname.includes('login')) {
+    // On vérifie la session SAUF si on est sur login/register
+    if (!localStorage.getItem('partnerSession') && !location.pathname.includes('register') && !location.pathname.includes('login')) {
       navigate('/partner/login');
     }
   }, [navigate, location]);
 
+  // Si on est sur les pages publiques (login/register), on affiche juste le contenu sans le menu
   if (location.pathname.includes('login') || location.pathname.includes('register')) {
     return <Outlet />;
   }
 
+  // --- MENU DE NAVIGATION ---
   const navItems = [
     { path: '/partner/dashboard', icon: LayoutDashboard, label: 'Accueil' },
     { path: '/partner/sales', icon: ShoppingBag, label: 'Ventes' },
     { path: '/partner/wallet', icon: Wallet, label: 'Finances' },
   ];
 
-  // Seul ce bouton déconnecte explicitement
   const handleLogout = () => {
     if(window.confirm("Se déconnecter de l'espace partenaire ?")) {
-      sessionStorage.removeItem('partnerSession');
+      localStorage.removeItem('partnerSession');
       navigate('/partner/login');
     }
   };
@@ -40,7 +39,7 @@ const PartnerLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans text-gray-800">
       
-      {/* === SIDEBAR === */}
+      {/* === 1. SIDEBAR (ORDINATEUR) === */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full z-30">
         <div className="p-8 border-b border-gray-100">
           <Link to="/" className="flex items-center gap-3 group">
@@ -52,7 +51,7 @@ const PartnerLayout = () => {
         </div>
 
         <nav className="flex-1 p-6 space-y-2">
-          {/* --- CORRECTION : Ce lien navigue simplement, il ne déconnecte PAS --- */}
+          {/* LIEN DE RETOUR VERS LE SITE (LE PONT) */}
           <Link to="/menu" className="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-800 bg-gray-100 hover:bg-gray-200 font-bold mb-6 transition-all">
              <ArrowLeft size={20}/> 
              <span>Retour Boutique</span>
@@ -87,8 +86,9 @@ const PartnerLayout = () => {
         </div>
       </aside>
 
-      {/* === MAIN CONTENT === */}
+      {/* === 2. CONTENU PRINCIPAL === */}
       <main className="flex-1 md:ml-64 pb-24 md:pb-8 relative">
+        {/* Header Mobile Simplifié */}
         <div className="md:hidden bg-white p-4 sticky top-0 z-20 shadow-sm flex justify-between items-center">
            <div className="font-serif font-bold text-lg text-brand-brown">Espace Partenaire</div>
            <button onClick={handleLogout} className="p-2 bg-gray-100 rounded-full text-gray-500"><LogOut size={16}/></button>
@@ -99,10 +99,10 @@ const PartnerLayout = () => {
         </div>
       </main>
 
-      {/* === MOBILE NAV === */}
+      {/* === 3. BOTTOM BAR (MOBILE) === */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-end h-20 px-2 z-40 pb-3 shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
         
-        {/* --- CORRECTION MOBILE : Retour Boutique sans déconnexion --- */}
+        {/* LIEN DE RETOUR VERS LA BOUTIQUE (LE PONT MOBILE) */}
         <Link 
           to="/menu" 
           className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-gray-600 active:scale-95 transition"
@@ -113,6 +113,7 @@ const PartnerLayout = () => {
           <span className="text-[10px] font-bold">Boutique</span>
         </Link>
 
+        {/* LIENS PARTENAIRE */}
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
