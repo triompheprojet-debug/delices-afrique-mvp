@@ -126,10 +126,10 @@ export const ConfigProvider = ({ children }) => {
     const platformGain = sellingPrice - buyingPrice - comm - disc;
 
     return {
-      discountClient: disc,           // ✅ Réduction visible pour le client
-      commissionPartner: comm,        // ✅ Commission payée au partenaire
-      platformGain: platformGain,     // ✅ Gain net de la plateforme
-      finalPrice: sellingPrice - disc // ✅ Prix final payé par le client
+      discountClient: Math.round(disc),           // ✅ Arrondi
+      commissionPartner: Math.round(comm),        // ✅ Arrondi
+      platformGain: Math.round(platformGain),     // ✅ Arrondi
+      finalPrice: Math.round(sellingPrice - disc) // ✅ FIX BUG-15 : Arrondi pour éviter centimes
     };
   };
 

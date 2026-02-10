@@ -1,0 +1,3390 @@
+{
+  "exportDate": "2026-02-09T16:32:02.308Z",
+  "orders": [
+    {
+      "id": "0gG1swPGXOjuTzp6Y6aD",
+      "supplierName": "BurgerMouse",
+      "details": {
+        "discount": 500,
+        "notes": "",
+        "deliveryFee": 1020,
+        "scheduledTime": null,
+        "finalTotal": 11520,
+        "deliveryDistance": "1.02",
+        "paymentMethod": "Espèces",
+        "method": "Livraison",
+        "subTotal": 11000,
+        "scheduledDate": null
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "promo": {
+        "platformGain": 1900,
+        "status": "validated",
+        "discountAmount": 500,
+        "partnerLevel": "Standard",
+        "partnerCommission": 600,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discount": 500,
+        "code": "DA-MOU-940"
+      },
+      "code": "CMD-759778",
+      "customer": {
+        "phone": "345678",
+        "address": "Avenue Benoît Loembet, Lumumba, Pointe-Noire ",
+        "name": "vbjnjhyt",
+        "location": {
+          "lng": 11.862049620743328,
+          "lat": -4.794697273214067
+        }
+      },
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770301624,
+          "nanoseconds": 770000000
+        },
+        "En livraison": {
+          "seconds": 1770302140,
+          "nanoseconds": 800000000
+        },
+        "Livré": {
+          "seconds": 1770302145,
+          "nanoseconds": 960000000
+        },
+        "En préparation": {
+          "seconds": 1770302139,
+          "nanoseconds": 298000000
+        }
+      },
+      "items": [
+        {
+          "platformMargin": 1500,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "price": 5500,
+          "status": "active",
+          "supplierName": "BurgerMouse",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "supplierPrice": 4000,
+          "quantity": 2,
+          "cartId": 1770301595823,
+          "buyingPrice": 0,
+          "name": "Burger Stake",
+          "category": "Burger",
+          "inStock": true
+        }
+      ],
+      "status": "Terminé",
+      "lastUpdated": {
+        "seconds": 1770302145,
+        "nanoseconds": 960000000
+      },
+      "createdAt": {
+        "seconds": 1770301624,
+        "nanoseconds": 770000000
+      }
+    },
+    {
+      "id": "12mk26dq7u6ML3QCbgyv",
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "code": "CMD-558496",
+      "lastUpdated": {
+        "seconds": 1770302094,
+        "nanoseconds": 1000000
+      },
+      "details": {
+        "subTotal": 2500,
+        "paymentMethod": "Espèces",
+        "finalTotal": 3232,
+        "method": "Livraison",
+        "discount": 150,
+        "scheduledTime": null,
+        "deliveryFee": 882,
+        "scheduledDate": null,
+        "notes": "",
+        "deliveryDistance": "0.88"
+      },
+      "items": [
+        {
+          "category": "shawarma",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierName": "Christ",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "name": "shawara poulet",
+          "status": "active",
+          "inStock": true,
+          "cartId": 1770301875379,
+          "platformMargin": 1000,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "description": "",
+          "supplierPrice": 1500,
+          "price": 2500,
+          "quantity": 1,
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo="
+        }
+      ],
+      "settlementStatus": "paid",
+      "promo": {
+        "platformGain": 700,
+        "discount": 150,
+        "partnerLevel": "Standard",
+        "partnerCommission": 150,
+        "status": "validated",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "discountAmount": 150
+      },
+      "supplierName": "Christ",
+      "status": "Terminé",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770302086,
+          "nanoseconds": 89000000
+        },
+        "En livraison": {
+          "seconds": 1770302087,
+          "nanoseconds": 311000000
+        },
+        "En attente": {
+          "seconds": 1770301897,
+          "nanoseconds": 282000000
+        },
+        "Livré": {
+          "seconds": 1770302094,
+          "nanoseconds": 1000000
+        }
+      },
+      "customer": {
+        "name": "nmvcfytygh",
+        "address": "Rue A1.360, Roc de Tchikobo, Pointe-Noire ",
+        "location": {
+          "lat": -4.794627590910682,
+          "lng": 11.845206445439645
+        },
+        "phone": "3456789"
+      },
+      "createdAt": {
+        "seconds": 1770301897,
+        "nanoseconds": 282000000
+      }
+    },
+    {
+      "id": "3W4SGRdlNCisIceGNRH3",
+      "paidAt": {
+        "seconds": 1770078117,
+        "nanoseconds": 126000000
+      },
+      "lastUpdated": {
+        "seconds": 1770077480,
+        "nanoseconds": 675000000
+      },
+      "supplierName": "BurgerMouse",
+      "settlementStatus": "paid",
+      "createdAt": {
+        "seconds": 1770077403,
+        "nanoseconds": 694000000
+      },
+      "status": "Terminé",
+      "code": "CMD-257609",
+      "promo": null,
+      "details": {
+        "subTotal": 5500,
+        "method": "Livraison",
+        "notes": "pas de quetope",
+        "deliveryFee": 500,
+        "scheduledDate": null,
+        "scheduledTime": null,
+        "paymentMethod": "Espèces",
+        "deliveryDistance": "0.29",
+        "discount": 0,
+        "finalTotal": 6000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "items": [
+        {
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "category": "Burger",
+          "status": "active",
+          "supplierPrice": 4000,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "platformMargin": 1500,
+          "price": 5500,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "supplierName": "BurgerMouse",
+          "quantity": 1,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "cartId": 1770077324018,
+          "inStock": true,
+          "name": "Burger Stake",
+          "createdAt": "2026-02-03T00:07:53.624Z"
+        }
+      ],
+      "customer": {
+        "address": "Avenue Emmanuel Dadet, Losange, Pointe-Noire ",
+        "name": "Mouanda",
+        "location": {
+          "lng": 11.8550978,
+          "lat": -4.7915081
+        },
+        "phone": "Triomphe"
+      },
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770077403,
+          "nanoseconds": 694000000
+        },
+        "Livré": {
+          "seconds": 1770077480,
+          "nanoseconds": 675000000
+        },
+        "En livraison": {
+          "seconds": 1770077477,
+          "nanoseconds": 465000000
+        },
+        "En préparation": {
+          "seconds": 1770077475,
+          "nanoseconds": 771000000
+        }
+      },
+      "settlementId": "JHdS3FhulEhlxgzJX9hL"
+    },
+    {
+      "id": "3lrQljvhiePLXo7kvxqa",
+      "customer": {
+        "phone": "3678",
+        "location": {
+          "lat": -4.793463456506424,
+          "lng": 11.851648086965396
+        },
+        "address": "21, Rue de Bouyala, Losange ",
+        "name": "fghbvgvhj"
+      },
+      "items": [
+        {
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "name": "Burger Stake",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "category": "Burger",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "buyingPrice": 0,
+          "quantity": 1,
+          "price": 5500,
+          "cartId": 1770301575686,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "status": "active",
+          "supplierName": "BurgerMouse",
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "platformMargin": 1500,
+          "inStock": true
+        }
+      ],
+      "promo": null,
+      "supplierName": "BurgerMouse",
+      "createdAt": {
+        "seconds": 1770301590,
+        "nanoseconds": 727000000
+      },
+      "status": "Terminé",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770302137,
+          "nanoseconds": 850000000
+        },
+        "En préparation": {
+          "seconds": 1770302133,
+          "nanoseconds": 301000000
+        },
+        "En attente": {
+          "seconds": 1770301590,
+          "nanoseconds": 727000000
+        },
+        "En livraison": {
+          "seconds": 1770302134,
+          "nanoseconds": 720000000
+        }
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "lastUpdated": {
+        "seconds": 1770302137,
+        "nanoseconds": 850000000
+      },
+      "code": "CMD-502205",
+      "details": {
+        "scheduledTime": null,
+        "method": "Livraison",
+        "deliveryDistance": "0.16",
+        "scheduledDate": null,
+        "deliveryFee": 500,
+        "notes": "",
+        "finalTotal": 6000,
+        "discount": 0,
+        "subTotal": 5500,
+        "paymentMethod": "Espèces"
+      }
+    },
+    {
+      "id": "4QrALlRRo0CwslgiEsrg",
+      "createdAt": {
+        "seconds": 1770299061,
+        "nanoseconds": 491000000
+      },
+      "customer": {
+        "address": "Net cair, Rue de l'Ogoué, Roc de Tchikobo ",
+        "phone": "3456789",
+        "name": "cgvhjkl",
+        "location": {
+          "lng": 11.8490716,
+          "lat": -4.7937559
+        }
+      },
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770300831,
+          "nanoseconds": 962000000
+        },
+        "Livré": {
+          "seconds": 1770300837,
+          "nanoseconds": 166000000
+        },
+        "En attente": {
+          "seconds": 1770299061,
+          "nanoseconds": 491000000
+        },
+        "En préparation": {
+          "seconds": 1770300830,
+          "nanoseconds": 435000000
+        }
+      },
+      "supplierName": "BurgerMouse",
+      "status": "Terminé",
+      "items": [
+        {
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "buyingPrice": 0,
+          "supplierName": "BurgerMouse",
+          "status": "active",
+          "platformMargin": 1500,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "price": 5500,
+          "inStock": true,
+          "quantity": 4,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "name": "Burger Stake",
+          "category": "Burger",
+          "cartId": 1770299036254,
+          "supplierPrice": 4000,
+          "id": "DFGiiBzf7uDMtw1DfPYx"
+        }
+      ],
+      "promo": {
+        "code": "DA-MOU-940",
+        "discount": 1000,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "status": "validated",
+        "discountAmount": 1000,
+        "platformGain": 3800,
+        "partnerLevel": "Standard",
+        "partnerCommission": 1200
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "details": {
+        "notes": "",
+        "paymentMethod": "Espèces",
+        "deliveryDistance": "0.44",
+        "deliveryFee": 500,
+        "scheduledDate": null,
+        "subTotal": 22000,
+        "method": "Livraison",
+        "discount": 1000,
+        "finalTotal": 21500,
+        "scheduledTime": null
+      },
+      "code": "CMD-423739",
+      "lastUpdated": {
+        "seconds": 1770300837,
+        "nanoseconds": 166000000
+      }
+    },
+    {
+      "id": "8UZTkaD1Yby9x91JPMkJ",
+      "lastUpdated": {
+        "seconds": 1770598050,
+        "nanoseconds": 98000000
+      },
+      "items": [
+        {
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "supplierName": "BurgerMouse",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "name": "Burger Stake",
+          "quantity": 1,
+          "buyingPrice": 0,
+          "category": "Burger",
+          "price": 5500
+        }
+      ],
+      "customer": {
+        "name": "jemand",
+        "address": "ertyuio",
+        "phone": "234567890",
+        "location": {
+          "addressName": "Plateau, 188, Avenue Fayette Tchitembo",
+          "distance": 0.6706592779724805,
+          "lat": -4.791931782587753,
+          "lng": 11.858956860249542
+        }
+      },
+      "details": {
+        "notes": "",
+        "paymentMethod": "Espèces",
+        "discount": 0,
+        "method": "Livraison",
+        "deliveryFee": 671,
+        "scheduledTime": null,
+        "finalTotal": 6171,
+        "scheduledDate": null,
+        "subTotal": 5500,
+        "deliveryDistance": "0.67"
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "status": "Livré",
+      "settlementStatus": "pending",
+      "promo": null,
+      "createdAt": {
+        "seconds": 1770541575,
+        "nanoseconds": 773000000
+      },
+      "code": "CMD-1770541575341",
+      "supplierName": "BurgerMouse",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770598050,
+          "nanoseconds": 98000000
+        },
+        "En attente": {
+          "seconds": 1770541575,
+          "nanoseconds": 773000000
+        },
+        "En livraison": {
+          "seconds": 1770598045,
+          "nanoseconds": 234000000
+        },
+        "En préparation": {
+          "seconds": 1770598044,
+          "nanoseconds": 172000000
+        }
+      }
+    },
+    {
+      "id": "ATCt70CbzThoEktjiGgu",
+      "items": [
+        {
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "buyingPrice": 0,
+          "status": "active",
+          "supplierName": "Christ",
+          "platformMargin": 1000,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "description": "",
+          "price": 2500,
+          "inStock": true,
+          "quantity": 2,
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "name": "shawara poulet",
+          "category": "shawarma",
+          "cartId": 1770300375742,
+          "supplierPrice": 1500,
+          "id": "4V0JFLW2b3El9Y3gGREr"
+        }
+      ],
+      "customer": {
+        "location": {
+          "lat": -4.7991962,
+          "lng": 11.8445338
+        },
+        "name": "D HBO HD",
+        "address": "Centre ville ",
+        "phone": "08655458"
+      },
+      "details": {
+        "subTotal": 5000,
+        "scheduledDate": null,
+        "scheduledTime": null,
+        "method": "Livraison",
+        "finalTotal": 5864,
+        "paymentMethod": "Mobile Money",
+        "deliveryFee": 1164,
+        "discount": 300,
+        "notes": "",
+        "deliveryDistance": "1.16"
+      },
+      "createdAt": {
+        "seconds": 1770300624,
+        "nanoseconds": 894000000
+      },
+      "settlementStatus": "paid",
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "lastUpdated": {
+        "seconds": 1770300945,
+        "nanoseconds": 927000000
+      },
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "status": "Terminé",
+      "supplierName": "Christ",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770300945,
+          "nanoseconds": 927000000
+        },
+        "En préparation": {
+          "seconds": 1770300942,
+          "nanoseconds": 417000000
+        },
+        "En livraison": {
+          "seconds": 1770300943,
+          "nanoseconds": 513000000
+        },
+        "En attente": {
+          "seconds": 1770300624,
+          "nanoseconds": 894000000
+        }
+      },
+      "code": "CMD-535577",
+      "promo": {
+        "partnerCommission": 300,
+        "platformGain": 1400,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "partnerLevel": "Standard",
+        "discount": 300,
+        "status": "validated",
+        "discountAmount": 300
+      }
+    },
+    {
+      "id": "AXu0ej7up1zAG9LWnRIF",
+      "status": "Terminé",
+      "promo": {
+        "code": "DA-MOU-940",
+        "status": "validated",
+        "discount": 150,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "platformGain": 1500,
+        "partnerLevel": "Standard"
+      },
+      "supplierName": "BurgerMouse",
+      "details": {
+        "notes": "",
+        "deliveryDistance": 0,
+        "paymentMethod": "Espèces",
+        "scheduledTime": "03:26",
+        "subTotal": 5500,
+        "deliveryFee": 0,
+        "finalTotal": 5350,
+        "scheduledDate": "2026-02-10",
+        "discount": 150,
+        "method": "Retrait"
+      },
+      "lastUpdated": {
+        "seconds": 1770598063,
+        "nanoseconds": 814000000
+      },
+      "settlementStatus": "pending",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770596801,
+          "nanoseconds": 813000000
+        },
+        "En préparation": {
+          "seconds": 1770598058,
+          "nanoseconds": 803000000
+        },
+        "En livraison": {
+          "seconds": 1770598060,
+          "nanoseconds": 171000000
+        },
+        "Livré": {
+          "seconds": 1770598063,
+          "nanoseconds": 814000000
+        }
+      },
+      "createdAt": {
+        "seconds": 1770596801,
+        "nanoseconds": 813000000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "code": "CMD-1770596800485",
+      "customer": {
+        "name": "dfhgj",
+        "location": null,
+        "phone": "45678",
+        "address": "Avenue Charles de Gaulle, Brazzaville"
+      },
+      "items": [
+        {
+          "supplierPrice": 4000,
+          "price": 5500,
+          "buyingPrice": 0,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierName": "BurgerMouse",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "name": "Burger Stake",
+          "quantity": 1,
+          "category": "Burger"
+        }
+      ]
+    },
+    {
+      "id": "AyOTth6eP2FWdqhi26xb",
+      "lastUpdated": {
+        "seconds": 1770300850,
+        "nanoseconds": 774000000
+      },
+      "items": [
+        {
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "supplierName": "BurgerMouse",
+          "quantity": 4,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "buyingPrice": 0,
+          "platformMargin": 1500,
+          "name": "Burger Stake",
+          "price": 5500,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "category": "Burger",
+          "cartId": 1770299532540,
+          "status": "active",
+          "inStock": true
+        },
+        {
+          "supplierPrice": 2500,
+          "id": "4syaciEgmcxdygP2IYvo",
+          "supplierName": "BurgerMouse",
+          "description": "",
+          "quantity": 6,
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "price": 3500,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "status": "active",
+          "platformMargin": 1000,
+          "buyingPrice": 0,
+          "inStock": true,
+          "category": "pizzas",
+          "cartId": 1770299540196,
+          "name": "Pizza viande"
+        }
+      ],
+      "customer": {
+        "address": "Rue de M'bounda, Roc de Tchikobo, Pointe-Noire ",
+        "location": {
+          "lng": 11.851937632312694,
+          "lat": -4.790633250858876
+        },
+        "phone": "34560098",
+        "name": "mdbfghhjk"
+      },
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770300846,
+          "nanoseconds": 397000000
+        },
+        "Livré": {
+          "seconds": 1770300850,
+          "nanoseconds": 774000000
+        },
+        "En préparation": {
+          "seconds": 1770300844,
+          "nanoseconds": 714000000
+        },
+        "En attente": {
+          "seconds": 1770299579,
+          "nanoseconds": 893000000
+        }
+      },
+      "promo": {
+        "discount": 1900,
+        "discountAmount": 1900,
+        "platformGain": 8000,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "partnerLevel": "Standard",
+        "status": "validated",
+        "partnerCommission": 2100
+      },
+      "code": "CMD-367617",
+      "createdAt": {
+        "seconds": 1770299579,
+        "nanoseconds": 893000000
+      },
+      "details": {
+        "scheduledDate": null,
+        "discount": 1900,
+        "subTotal": 43000,
+        "method": "Livraison",
+        "deliveryFee": 500,
+        "finalTotal": 41600,
+        "deliveryDistance": "0.29",
+        "scheduledTime": null,
+        "notes": "",
+        "paymentMethod": "Espèces"
+      },
+      "status": "Terminé",
+      "supplierName": "BurgerMouse",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt"
+    },
+    {
+      "id": "B9TfwMgVQrqbRhaRwTWs",
+      "code": "CMD-1770511436544",
+      "promo": {
+        "discount": 300,
+        "platformGain": 2833,
+        "status": "validated",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "partnerLevel": "Standard",
+        "code": "DA-MOU-940"
+      },
+      "lastUpdated": {
+        "seconds": 1770598028,
+        "nanoseconds": 263000000
+      },
+      "supplierName": "BurgerMouse",
+      "settlementStatus": "pending",
+      "createdAt": {
+        "seconds": 1770511448,
+        "nanoseconds": 769000000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "status": "Livré",
+      "customer": {
+        "name": "Diamant Triomphe",
+        "phone": "+242069970113",
+        "address": "Avenue base industriel",
+        "location": {
+          "lat": -4.795989416864017,
+          "addressName": "OFIS, 319, Boulevard du Général Charles de Gaulle",
+          "lng": 11.85280179974143,
+          "distance": 0.3331326904024794
+        }
+      },
+      "items": [
+        {
+          "supplierPrice": 4000,
+          "buyingPrice": 0,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "name": "Burger Stake",
+          "quantity": 1,
+          "category": "Burger",
+          "supplierName": "BurgerMouse",
+          "price": 5500,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt"
+        },
+        {
+          "supplierName": "BurgerMouse",
+          "supplierPrice": 2500,
+          "quantity": 1,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "id": "4syaciEgmcxdygP2IYvo",
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "price": 3500,
+          "category": "pizzas",
+          "buyingPrice": 0,
+          "name": "Pizza viande"
+        }
+      ],
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770598023,
+          "nanoseconds": 272000000
+        },
+        "En attente": {
+          "seconds": 1770511448,
+          "nanoseconds": 769000000
+        },
+        "En livraison": {
+          "seconds": 1770598024,
+          "nanoseconds": 530000000
+        },
+        "Livré": {
+          "seconds": 1770598028,
+          "nanoseconds": 263000000
+        }
+      },
+      "details": {
+        "paymentMethod": "Espèces",
+        "deliveryFee": 333,
+        "method": "Livraison",
+        "subTotal": 9000,
+        "discount": 300,
+        "notes": "",
+        "finalTotal": 9033,
+        "scheduledTime": null,
+        "scheduledDate": null,
+        "deliveryDistance": "0.33"
+      }
+    },
+    {
+      "id": "EmLAHTmrEVjnTdFVZNQz",
+      "details": {
+        "scheduledTime": null,
+        "finalTotal": 7769,
+        "deliveryFee": 269,
+        "method": "Livraison",
+        "deliveryDistance": "0.27",
+        "paymentMethod": "Espèces",
+        "discount": 0,
+        "scheduledDate": null,
+        "notes": "",
+        "subTotal": 7500
+      },
+      "lastUpdated": {
+        "seconds": 1770591644,
+        "nanoseconds": 584000000
+      },
+      "createdAt": {
+        "seconds": 1770538306,
+        "nanoseconds": 771000000
+      },
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770591640,
+          "nanoseconds": 503000000
+        },
+        "Livré": {
+          "seconds": 1770591644,
+          "nanoseconds": 584000000
+        },
+        "En préparation": {
+          "seconds": 1770591639,
+          "nanoseconds": 312000000
+        },
+        "En attente": {
+          "seconds": 1770538306,
+          "nanoseconds": 771000000
+        }
+      },
+      "supplierName": "Christ",
+      "code": "CMD-1770538305103",
+      "settlementStatus": "pending",
+      "items": [
+        {
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierPrice": 1500,
+          "name": "shawara poulet",
+          "buyingPrice": 0,
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "supplierName": "Christ",
+          "quantity": 3,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "category": "shawarma",
+          "price": 2500
+        }
+      ],
+      "customer": {
+        "address": "Avenue base industriel",
+        "name": "Diamant Triomphe",
+        "location": {
+          "addressName": "Rue Boutila, Roc de Tchikobo, Pointe-Noire",
+          "lat": -4.791335052135862,
+          "distance": 0.26883276474880174,
+          "lng": 11.851240829530699
+        },
+        "phone": "+242069970113"
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "status": "Livré",
+      "promo": null
+    },
+    {
+      "id": "HEFk6AQH953jEcnxSjNr",
+      "supplierName": "BurgerMouse",
+      "code": "CMD-1770539663608",
+      "createdAt": {
+        "seconds": 1770539665,
+        "nanoseconds": 345000000
+      },
+      "details": {
+        "discount": 0,
+        "scheduledDate": null,
+        "paymentMethod": "Espèces",
+        "deliveryFee": 171,
+        "method": "Livraison",
+        "finalTotal": 5671,
+        "notes": "",
+        "subTotal": 5500,
+        "scheduledTime": null,
+        "deliveryDistance": "0.17"
+      },
+      "promo": null,
+      "status": "Livré",
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770598032,
+          "nanoseconds": 60000000
+        },
+        "En attente": {
+          "seconds": 1770539665,
+          "nanoseconds": 345000000
+        },
+        "En préparation": {
+          "seconds": 1770598030,
+          "nanoseconds": 317000000
+        },
+        "Livré": {
+          "seconds": 1770598035,
+          "nanoseconds": 575000000
+        }
+      },
+      "customer": {
+        "name": "Jena dujont",
+        "address": "ehdsjfhgd",
+        "phone": "045678765432",
+        "location": {
+          "distance": 0.17093955957180637,
+          "addressName": "Couleur equateur, Rue de Bouyala, Losange",
+          "lng": 11.851869528696069,
+          "lat": -4.794046058813902
+        }
+      },
+      "settlementStatus": "pending",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "items": [
+        {
+          "buyingPrice": 0,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "category": "Burger",
+          "price": 5500,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "supplierName": "BurgerMouse",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "quantity": 1,
+          "name": "Burger Stake"
+        }
+      ],
+      "lastUpdated": {
+        "seconds": 1770598035,
+        "nanoseconds": 575000000
+      }
+    },
+    {
+      "id": "HNGJuFPGtzcKcYHuQcVd",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "status": "Terminé",
+      "items": [
+        {
+          "cartId": 1770300652806,
+          "quantity": 1,
+          "platformMargin": 1000,
+          "category": "shawarma",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "inStock": true,
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierName": "Christ",
+          "status": "active",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "price": 2500,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "name": "shawara poulet",
+          "supplierPrice": 1500,
+          "description": ""
+        }
+      ],
+      "settlementStatus": "paid",
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770300948,
+          "nanoseconds": 426000000
+        },
+        "En attente": {
+          "seconds": 1770300724,
+          "nanoseconds": 508000000
+        },
+        "En préparation": {
+          "seconds": 1770300947,
+          "nanoseconds": 366000000
+        },
+        "Livré": {
+          "seconds": 1770300951,
+          "nanoseconds": 476000000
+        }
+      },
+      "code": "CMD-634023",
+      "supplierName": "Christ",
+      "customer": {
+        "phone": "066454824",
+        "location": {
+          "lng": 11.855964660644533,
+          "lat": -4.784853858724573
+        },
+        "address": "Avenue du Commandant Fode, Lumumba, Pointe-Noire ",
+        "name": "Ma keufs "
+      },
+      "promo": {
+        "code": "DA-MOU-940",
+        "platformGain": 700,
+        "discount": 150,
+        "status": "validated",
+        "discountAmount": 150,
+        "partnerCommission": 150,
+        "partnerLevel": "Standard",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo"
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "lastUpdated": {
+        "seconds": 1770300951,
+        "nanoseconds": 476000000
+      },
+      "details": {
+        "notes": "Veheje",
+        "deliveryDistance": "0.96",
+        "paymentMethod": "Espèces",
+        "scheduledTime": null,
+        "subTotal": 2500,
+        "deliveryFee": 964,
+        "scheduledDate": null,
+        "finalTotal": 3314,
+        "discount": 150,
+        "method": "Livraison"
+      },
+      "createdAt": {
+        "seconds": 1770300724,
+        "nanoseconds": 508000000
+      }
+    },
+    {
+      "id": "IB9i7l7UfA24JASoHLVl",
+      "settlementId": "WIvECCeJJaQvkk68UiiU",
+      "createdAt": {
+        "seconds": 1770078390,
+        "nanoseconds": 223000000
+      },
+      "paidAt": {
+        "seconds": 1770102418,
+        "nanoseconds": 127000000
+      },
+      "promo": null,
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770078390,
+          "nanoseconds": 223000000
+        },
+        "En préparation": {
+          "seconds": 1770078899,
+          "nanoseconds": 703000000
+        },
+        "En livraison": {
+          "seconds": 1770078901,
+          "nanoseconds": 37000000
+        },
+        "Livré": {
+          "seconds": 1770078904,
+          "nanoseconds": 462000000
+        }
+      },
+      "lastUpdated": {
+        "seconds": 1770078904,
+        "nanoseconds": 462000000
+      },
+      "customer": {
+        "location": {
+          "lng": 11.842543900275663,
+          "lat": -4.7966904996239945
+        },
+        "name": "Mouanda ",
+        "address": "Rue A1.385, Roc de Tchikobo, Pointe-Noire ",
+        "phone": "03958383"
+      },
+      "items": [
+        {
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "category": "Burger",
+          "supplierName": "BurgerMouse",
+          "inStock": true,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "supplierPrice": 4000,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "cartId": 1770078366476,
+          "status": "active",
+          "price": 5500,
+          "platformMargin": 1500,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "name": "Burger Stake",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "quantity": 10
+        }
+      ],
+      "details": {
+        "finalTotal": 56229,
+        "subTotal": 55000,
+        "scheduledTime": null,
+        "deliveryFee": 1229,
+        "scheduledDate": null,
+        "discount": 0,
+        "paymentMethod": "Espèces",
+        "notes": "hjklp",
+        "deliveryDistance": "1.23",
+        "method": "Livraison"
+      },
+      "code": "CMD-184814",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "status": "Terminé",
+      "supplierName": "BurgerMouse",
+      "settlementStatus": "paid"
+    },
+    {
+      "id": "Ie7SvFt611VWCao6WS5z",
+      "items": [
+        {
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "price": 2500,
+          "name": "shawara poulet",
+          "inStock": true,
+          "category": "shawarma",
+          "supplierName": "Christ",
+          "supplierPrice": 1500,
+          "platformMargin": 1000,
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "buyingPrice": 0,
+          "quantity": 26,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "status": "active",
+          "description": "",
+          "cartId": 1770301910284
+        }
+      ],
+      "customer": {
+        "phone": "3456789",
+        "name": "mngfdsrdtyu",
+        "location": {
+          "lat": -4.796630580805914,
+          "lng": 11.844476392733398
+        },
+        "address": "Avenue Raymond Poincaré, Roc de Tchikobo, Pointe-Noire "
+      },
+      "details": {
+        "subTotal": 65000,
+        "method": "Livraison",
+        "deliveryFee": 1027,
+        "paymentMethod": "Espèces",
+        "deliveryDistance": "1.03",
+        "scheduledTime": null,
+        "scheduledDate": null,
+        "finalTotal": 62127,
+        "notes": "",
+        "discount": 3900
+      },
+      "createdAt": {
+        "seconds": 1770301942,
+        "nanoseconds": 757000000
+      },
+      "settlementStatus": "paid",
+      "lastUpdated": {
+        "seconds": 1770302102,
+        "nanoseconds": 370000000
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "supplierName": "Christ",
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "status": "Terminé",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770301942,
+          "nanoseconds": 757000000
+        },
+        "En livraison": {
+          "seconds": 1770302098,
+          "nanoseconds": 108000000
+        },
+        "Livré": {
+          "seconds": 1770302102,
+          "nanoseconds": 370000000
+        },
+        "En préparation": {
+          "seconds": 1770302095,
+          "nanoseconds": 620000000
+        }
+      },
+      "code": "CMD-885272",
+      "promo": {
+        "status": "validated",
+        "platformGain": 18200,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discount": 3900,
+        "discountAmount": 3900,
+        "code": "DA-MOU-940",
+        "partnerCommission": 3900,
+        "partnerLevel": "Standard"
+      }
+    },
+    {
+      "id": "JBxtQVGWy3MBB52HNKUX",
+      "customer": {
+        "location": {
+          "distance": 0.8739828166915657,
+          "addressName": "Rue de N'djeno, Losange, Pointe-Noire",
+          "lat": -4.798732474231434,
+          "lng": 11.847603651698543
+        },
+        "name": "detruyd",
+        "address": "rtygfd",
+        "phone": "23456"
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "supplierName": "BurgerMouse",
+      "code": "CMD-1770540204024",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770540205,
+          "nanoseconds": 802000000
+        },
+        "En préparation": {
+          "seconds": 1770598037,
+          "nanoseconds": 889000000
+        },
+        "Livré": {
+          "seconds": 1770598042,
+          "nanoseconds": 69000000
+        },
+        "En livraison": {
+          "seconds": 1770598039,
+          "nanoseconds": 140000000
+        }
+      },
+      "promo": null,
+      "createdAt": {
+        "seconds": 1770540205,
+        "nanoseconds": 802000000
+      },
+      "details": {
+        "finalTotal": 6374,
+        "subTotal": 5500,
+        "scheduledTime": null,
+        "deliveryFee": 874,
+        "scheduledDate": null,
+        "discount": 0,
+        "paymentMethod": "Espèces",
+        "notes": "",
+        "deliveryDistance": "0.87",
+        "method": "Livraison"
+      },
+      "items": [
+        {
+          "name": "Burger Stake",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "price": 5500,
+          "buyingPrice": 0,
+          "category": "Burger",
+          "supplierPrice": 4000,
+          "supplierName": "BurgerMouse",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "quantity": 1
+        }
+      ],
+      "status": "Livré",
+      "settlementStatus": "pending",
+      "lastUpdated": {
+        "seconds": 1770598042,
+        "nanoseconds": 69000000
+      }
+    },
+    {
+      "id": "JtXE8FJU3Co7A4XUb9fA",
+      "items": [
+        {
+          "supplierPrice": 2500,
+          "cartId": 1770301633128,
+          "price": 3500,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "description": "",
+          "id": "4syaciEgmcxdygP2IYvo",
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "category": "pizzas",
+          "quantity": 4,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "inStock": true,
+          "buyingPrice": 0,
+          "platformMargin": 1000,
+          "status": "active",
+          "name": "Pizza viande",
+          "supplierName": "BurgerMouse"
+        }
+      ],
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770302148,
+          "nanoseconds": 820000000
+        },
+        "En préparation": {
+          "seconds": 1770302147,
+          "nanoseconds": 821000000
+        },
+        "En attente": {
+          "seconds": 1770301670,
+          "nanoseconds": 380000000
+        },
+        "Livré": {
+          "seconds": 1770302152,
+          "nanoseconds": 630000000
+        }
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "code": "CMD-762607",
+      "lastUpdated": {
+        "seconds": 1770302152,
+        "nanoseconds": 630000000
+      },
+      "customer": {
+        "name": "n bvchgvbjnk",
+        "phone": "456789",
+        "address": "Retrait Boutique",
+        "location": null
+      },
+      "status": "Terminé",
+      "details": {
+        "scheduledDate": "2026-02-06",
+        "finalTotal": 13400,
+        "deliveryDistance": 0,
+        "deliveryFee": 0,
+        "paymentMethod": "Espèces",
+        "notes": "",
+        "method": "Retrait",
+        "subTotal": 14000,
+        "scheduledTime": "17:28",
+        "discount": 600
+      },
+      "promo": {
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "partnerCommission": 600,
+        "code": "DA-MOU-940",
+        "platformGain": 2800,
+        "discountAmount": 600,
+        "status": "validated",
+        "partnerLevel": "Standard",
+        "discount": 600
+      },
+      "supplierName": "BurgerMouse",
+      "createdAt": {
+        "seconds": 1770301670,
+        "nanoseconds": 380000000
+      }
+    },
+    {
+      "id": "L2XBZqgumIcOwBPwaTA5",
+      "lastUpdated": {
+        "seconds": 1770078897,
+        "nanoseconds": 755000000
+      },
+      "details": {
+        "subTotal": 16500,
+        "discount": 0,
+        "deliveryFee": 0,
+        "notes": "",
+        "scheduledTime": "14:27",
+        "paymentMethod": "Espèces",
+        "deliveryDistance": 0,
+        "method": "Retrait",
+        "finalTotal": 16500,
+        "scheduledDate": "2026-03-06"
+      },
+      "paidAt": {
+        "seconds": 1770102418,
+        "nanoseconds": 127000000
+      },
+      "customer": {
+        "address": "Retrait Boutique",
+        "location": null,
+        "phone": "0398300",
+        "name": "merveil"
+      },
+      "status": "Terminé",
+      "settlementStatus": "paid",
+      "items": [
+        {
+          "price": 5500,
+          "category": "Burger",
+          "quantity": 3,
+          "supplierName": "BurgerMouse",
+          "inStock": true,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "status": "active",
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "cartId": 1770078320421,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "name": "Burger Stake",
+          "platformMargin": 1500,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000
+        }
+      ],
+      "promo": null,
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770078435,
+          "nanoseconds": 669000000
+        },
+        "Livré": {
+          "seconds": 1770078897,
+          "nanoseconds": 755000000
+        },
+        "En livraison": {
+          "seconds": 1770078895,
+          "nanoseconds": 284000000
+        },
+        "En attente": {
+          "seconds": 1770078356,
+          "nanoseconds": 80000000
+        }
+      },
+      "settlementId": "WIvECCeJJaQvkk68UiiU",
+      "createdAt": {
+        "seconds": 1770078356,
+        "nanoseconds": 80000000
+      },
+      "supplierName": "BurgerMouse",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "code": "CMD-210802"
+    },
+    {
+      "id": "SzfRH7zrFqBviElySWhZ",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770103146,
+          "nanoseconds": 130000000
+        },
+        "En préparation": {
+          "seconds": 1770103157,
+          "nanoseconds": 117000000
+        },
+        "En livraison": {
+          "seconds": 1770103157,
+          "nanoseconds": 566000000
+        },
+        "Livré": {
+          "seconds": 1770103162,
+          "nanoseconds": 634000000
+        }
+      },
+      "settlementStatus": "paid",
+      "lastUpdated": {
+        "seconds": 1770103162,
+        "nanoseconds": 634000000
+      },
+      "customer": {
+        "address": "Retrait Boutique",
+        "name": "Mouanda ",
+        "phone": "Triomphe ",
+        "location": null
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "supplierName": "BurgerMouse",
+      "details": {
+        "deliveryFee": 0,
+        "scheduledDate": "2026-02-11",
+        "notes": "",
+        "paymentMethod": "Espèces",
+        "finalTotal": 38500,
+        "discount": 0,
+        "method": "Retrait",
+        "scheduledTime": "12:34",
+        "subTotal": 38500,
+        "deliveryDistance": 0
+      },
+      "settlementId": "I3GDz1C4yxOaAvc1q9Eb",
+      "status": "Terminé",
+      "code": "CMD-862893",
+      "promo": null,
+      "items": [
+        {
+          "platformMargin": 1500,
+          "category": "Burger",
+          "cartId": 1770103087288,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "status": "active",
+          "inStock": true,
+          "price": 5500,
+          "name": "Burger Stake",
+          "quantity": 7,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "supplierName": "BurgerMouse",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "id": "DFGiiBzf7uDMtw1DfPYx"
+        }
+      ],
+      "paidAt": {
+        "seconds": 1770103916,
+        "nanoseconds": 980000000
+      },
+      "createdAt": {
+        "seconds": 1770103146,
+        "nanoseconds": 130000000
+      }
+    },
+    {
+      "id": "VIFjmFRD9CGdsLiWvUrT",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770300935,
+          "nanoseconds": 54000000
+        },
+        "En attente": {
+          "seconds": 1770300287,
+          "nanoseconds": 702000000
+        },
+        "En livraison": {
+          "seconds": 1770300936,
+          "nanoseconds": 150000000
+        },
+        "Livré": {
+          "seconds": 1770300940,
+          "nanoseconds": 441000000
+        }
+      },
+      "settlementStatus": "paid",
+      "lastUpdated": {
+        "seconds": 1770300940,
+        "nanoseconds": 441000000
+      },
+      "customer": {
+        "address": "Retrait Boutique",
+        "location": null,
+        "name": "Majeur",
+        "phone": "048451510"
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "supplierName": "Christ",
+      "details": {
+        "paymentMethod": "Espèces",
+        "scheduledDate": "2026-02-06",
+        "subTotal": 7500,
+        "deliveryFee": 0,
+        "deliveryDistance": 0,
+        "method": "Retrait",
+        "scheduledTime": "16:05",
+        "discount": 450,
+        "notes": "Pas de mayonnaise. Pas de frites",
+        "finalTotal": 7050
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "status": "Terminé",
+      "code": "CMD-105656",
+      "promo": {
+        "partnerCommission": 450,
+        "platformGain": 2100,
+        "code": "DA-MOU-940",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discount": 450,
+        "discountAmount": 450,
+        "partnerLevel": "Standard",
+        "status": "validated"
+      },
+      "items": [
+        {
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "supplierName": "Christ",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "inStock": true,
+          "quantity": 3,
+          "category": "shawarma",
+          "platformMargin": 1000,
+          "status": "active",
+          "supplierPrice": 1500,
+          "buyingPrice": 0,
+          "description": "",
+          "cartId": 1770300126856,
+          "price": 2500,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "name": "shawara poulet",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo="
+        }
+      ],
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "createdAt": {
+        "seconds": 1770300287,
+        "nanoseconds": 702000000
+      }
+    },
+    {
+      "id": "WfCh73Ee67obSONRzXoR",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770300082,
+          "nanoseconds": 33000000
+        },
+        "Livré": {
+          "seconds": 1770300931,
+          "nanoseconds": 17000000
+        },
+        "En livraison": {
+          "seconds": 1770300926,
+          "nanoseconds": 657000000
+        },
+        "En préparation": {
+          "seconds": 1770300925,
+          "nanoseconds": 394000000
+        }
+      },
+      "supplierName": "Christ",
+      "customer": {
+        "name": "Thibaut",
+        "address": "Retrait Boutique",
+        "phone": "88545248",
+        "location": null
+      },
+      "status": "Terminé",
+      "details": {
+        "finalTotal": 4700,
+        "paymentMethod": "Espèces",
+        "subTotal": 5000,
+        "method": "Retrait",
+        "deliveryDistance": 0,
+        "notes": "",
+        "discount": 300,
+        "deliveryFee": 0,
+        "scheduledTime": "15:01",
+        "scheduledDate": "2026-02-06"
+      },
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "lastUpdated": {
+        "seconds": 1770300931,
+        "nanoseconds": 17000000
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "promo": {
+        "discount": 300,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "status": "validated",
+        "discountAmount": 300,
+        "partnerLevel": "Standard",
+        "platformGain": 1400,
+        "partnerCommission": 300
+      },
+      "createdAt": {
+        "seconds": 1770300082,
+        "nanoseconds": 33000000
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "code": "CMD-522341",
+      "settlementStatus": "paid",
+      "items": [
+        {
+          "quantity": 2,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "category": "shawarma",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "price": 2500,
+          "buyingPrice": 0,
+          "name": "shawara poulet",
+          "supplierPrice": 1500,
+          "description": "",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "status": "active",
+          "cartId": 1770300001619,
+          "platformMargin": 1000,
+          "inStock": true,
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierName": "Christ"
+        }
+      ]
+    },
+    {
+      "id": "XNuQcNFszBxc8jaLTZKW",
+      "createdAt": {
+        "seconds": 1770301180,
+        "nanoseconds": 206000000
+      },
+      "status": "Terminé",
+      "customer": {
+        "location": null,
+        "name": "dgfhkjk",
+        "address": "Retrait Boutique",
+        "phone": "346578"
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770301193,
+          "nanoseconds": 706000000
+        },
+        "Livré": {
+          "seconds": 1770301255,
+          "nanoseconds": 520000000
+        },
+        "En attente": {
+          "seconds": 1770301180,
+          "nanoseconds": 206000000
+        },
+        "En livraison": {
+          "seconds": 1770301194,
+          "nanoseconds": 403000000
+        }
+      },
+      "supplierName": "BurgerMouse",
+      "items": [
+        {
+          "price": 5500,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "supplierName": "BurgerMouse",
+          "category": "Burger",
+          "status": "active",
+          "cartId": 1770301152597,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierPrice": 4000,
+          "inStock": true,
+          "buyingPrice": 0,
+          "platformMargin": 1500,
+          "name": "Burger Stake",
+          "quantity": 1
+        }
+      ],
+      "promo": {
+        "discount": 250,
+        "discountAmount": 250,
+        "code": "DA-MOU-940",
+        "partnerCommission": 300,
+        "partnerLevel": "Standard",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "status": "validated",
+        "platformGain": 950
+      },
+      "code": "CMD-488069",
+      "lastUpdated": {
+        "seconds": 1770301255,
+        "nanoseconds": 520000000
+      },
+      "details": {
+        "discount": 250,
+        "scheduledDate": "2026-02-06",
+        "deliveryDistance": 0,
+        "subTotal": 5500,
+        "paymentMethod": "Espèces",
+        "scheduledTime": "21:03",
+        "method": "Retrait",
+        "deliveryFee": 0,
+        "notes": "",
+        "finalTotal": 5250
+      }
+    },
+    {
+      "id": "XjNu4dOVlnuYeh6VnIqL",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770282213,
+          "nanoseconds": 930000000
+        },
+        "En attente": {
+          "seconds": 1770282088,
+          "nanoseconds": 971000000
+        },
+        "En livraison": {
+          "seconds": 1770282210,
+          "nanoseconds": 213000000
+        },
+        "En préparation": {
+          "seconds": 1770282203,
+          "nanoseconds": 690000000
+        }
+      },
+      "paidAt": {
+        "seconds": 1770285288,
+        "nanoseconds": 784000000
+      },
+      "code": "CMD-449415",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "settlementStatus": "paid",
+      "supplierName": "BurgerMouse",
+      "items": [
+        {
+          "buyingPrice": 0,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "inStock": true,
+          "name": "Burger Stake",
+          "price": 5500,
+          "status": "active",
+          "category": "Burger",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "cartId": 1770281622374,
+          "platformMargin": 1500,
+          "quantity": 2,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "supplierPrice": 4000,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierName": "BurgerMouse"
+        }
+      ],
+      "status": "Terminé",
+      "lastUpdated": {
+        "seconds": 1770282213,
+        "nanoseconds": 930000000
+      },
+      "customer": {
+        "location": {
+          "lat": -4.7753628,
+          "lng": 11.8666827
+        },
+        "phone": "3567345",
+        "address": "Mvou Mvou ",
+        "name": "Mouanda"
+      },
+      "createdAt": {
+        "seconds": 1770282088,
+        "nanoseconds": 971000000
+      },
+      "settlementId": "uiThcUqMmSdZrl0U9aZL",
+      "promo": {
+        "status": "validated",
+        "code": "DA-SPL-212",
+        "partnerLevel": "Standard",
+        "discount": 500,
+        "platformGain": 1900,
+        "partnerId": "C9WQRjaNYqeTEmnrxpbX",
+        "partnerCommission": 600,
+        "discountAmount": 500
+      },
+      "details": {
+        "finalTotal": 12979,
+        "scheduledTime": null,
+        "deliveryDistance": "2.48",
+        "method": "Livraison",
+        "deliveryFee": 2479,
+        "notes": "",
+        "subTotal": 11000,
+        "discount": 500,
+        "paymentMethod": "Espèces",
+        "scheduledDate": null
+      }
+    },
+    {
+      "id": "XlLkauiU2Bp3bxbCfxXB",
+      "items": [
+        {
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "status": "active",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "quantity": 3,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "name": "Burger Stake",
+          "supplierName": "BurgerMouse",
+          "price": 5500,
+          "inStock": true,
+          "category": "Burger",
+          "buyingPrice": 0,
+          "platformMargin": 1500,
+          "cartId": 1770298713694,
+          "supplierPrice": 4000,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt"
+        }
+      ],
+      "details": {
+        "finalTotal": 15750,
+        "subTotal": 16500,
+        "deliveryFee": 0,
+        "scheduledTime": "16:41",
+        "method": "Retrait",
+        "paymentMethod": "Espèces",
+        "deliveryDistance": 0,
+        "notes": "",
+        "discount": 750,
+        "scheduledDate": "2026-02-06"
+      },
+      "createdAt": {
+        "seconds": 1770298807,
+        "nanoseconds": 943000000
+      },
+      "promo": {
+        "partnerLevel": "Standard",
+        "partnerCommission": 900,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "platformGain": 2850,
+        "status": "validated",
+        "discount": 750,
+        "discountAmount": 750,
+        "code": "DA-MOU-940"
+      },
+      "code": "CMD-443471",
+      "lastUpdated": {
+        "seconds": 1770300814,
+        "nanoseconds": 826000000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "supplierName": "BurgerMouse",
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770300810,
+          "nanoseconds": 522000000
+        },
+        "Livré": {
+          "seconds": 1770300814,
+          "nanoseconds": 826000000
+        },
+        "En préparation": {
+          "seconds": 1770300796,
+          "nanoseconds": 145000000
+        },
+        "En attente": {
+          "seconds": 1770298807,
+          "nanoseconds": 943000000
+        }
+      },
+      "customer": {
+        "location": null,
+        "name": "trifghj",
+        "address": "Retrait Boutique",
+        "phone": "467890"
+      },
+      "status": "Terminé"
+    },
+    {
+      "id": "Zzp2H6XpWnsbvMQ0pXED",
+      "status": "Terminé",
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "createdAt": {
+        "seconds": 1770299783,
+        "nanoseconds": 447000000
+      },
+      "lastUpdated": {
+        "seconds": 1770300912,
+        "nanoseconds": 424000000
+      },
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770300912,
+          "nanoseconds": 424000000
+        },
+        "En livraison": {
+          "seconds": 1770300908,
+          "nanoseconds": 506000000
+        },
+        "En attente": {
+          "seconds": 1770299783,
+          "nanoseconds": 447000000
+        },
+        "En préparation": {
+          "seconds": 1770300907,
+          "nanoseconds": 523000000
+        }
+      },
+      "settlementStatus": "paid",
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "details": {
+        "deliveryFee": 1406,
+        "scheduledTime": null,
+        "finalTotal": 16406,
+        "method": "Livraison",
+        "discount": 0,
+        "notes": "",
+        "subTotal": 15000,
+        "paymentMethod": "Espèces",
+        "scheduledDate": null,
+        "deliveryDistance": "1.41"
+      },
+      "items": [
+        {
+          "supplierPrice": 1500,
+          "cartId": 1770299727160,
+          "price": 2500,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "description": "",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "category": "shawarma",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "quantity": 6,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "inStock": true,
+          "status": "active",
+          "buyingPrice": 0,
+          "platformMargin": 1000,
+          "name": "shawara poulet",
+          "supplierName": "Christ"
+        }
+      ],
+      "promo": null,
+      "supplierName": "Christ",
+      "code": "CMD-166542",
+      "customer": {
+        "name": "ndfghjkl",
+        "location": {
+          "lat": -4.794054082980755,
+          "lng": 11.865647921214713
+        },
+        "address": "Position Carte ",
+        "phone": "8765432"
+      }
+    },
+    {
+      "id": "a93XZcGYwiYsXe1HNr8J",
+      "items": [
+        {
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "category": "pizzas",
+          "name": "Pizza viande",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "cartId": 1770301530584,
+          "buyingPrice": 0,
+          "quantity": 2,
+          "description": "",
+          "supplierPrice": 2500,
+          "platformMargin": 1000,
+          "inStock": true,
+          "id": "4syaciEgmcxdygP2IYvo",
+          "price": 3500,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "status": "active",
+          "supplierName": "BurgerMouse"
+        }
+      ],
+      "status": "Terminé",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "code": "CMD-693681",
+      "lastUpdated": {
+        "seconds": 1770302131,
+        "nanoseconds": 992000000
+      },
+      "statusHistory": {
+        "En livraison": {
+          "seconds": 1770302127,
+          "nanoseconds": 70000000
+        },
+        "En attente": {
+          "seconds": 1770301568,
+          "nanoseconds": 20000000
+        },
+        "Livré": {
+          "seconds": 1770302131,
+          "nanoseconds": 992000000
+        },
+        "En préparation": {
+          "seconds": 1770302125,
+          "nanoseconds": 890000000
+        }
+      },
+      "promo": {
+        "partnerLevel": "Standard",
+        "discountAmount": 300,
+        "discount": 300,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "status": "validated",
+        "code": "DA-MOU-940",
+        "platformGain": 1400,
+        "partnerCommission": 300
+      },
+      "createdAt": {
+        "seconds": 1770301568,
+        "nanoseconds": 20000000
+      },
+      "details": {
+        "finalTotal": 8227,
+        "paymentMethod": "Espèces",
+        "notes": "",
+        "scheduledDate": null,
+        "deliveryDistance": "1.53",
+        "subTotal": 7000,
+        "scheduledTime": null,
+        "deliveryFee": 1527,
+        "discount": 300,
+        "method": "Livraison"
+      },
+      "supplierName": "BurgerMouse",
+      "customer": {
+        "phone": "2345678",
+        "address": "Rue Litapou, Lumumba, Pointe-Noire ",
+        "name": "nbvcdsdtyuyu",
+        "location": {
+          "lng": 11.866249141090439,
+          "lat": -4.789226334824879
+        }
+      }
+    },
+    {
+      "id": "aN8kgycOFaKr9PlXZuZR",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770302118,
+          "nanoseconds": 920000000
+        },
+        "Livré": {
+          "seconds": 1770302124,
+          "nanoseconds": 860000000
+        },
+        "En livraison": {
+          "seconds": 1770302120,
+          "nanoseconds": 20000000
+        },
+        "En attente": {
+          "seconds": 1770301521,
+          "nanoseconds": 859000000
+        }
+      },
+      "items": [
+        {
+          "name": "Burger Stake",
+          "buyingPrice": 0,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "status": "active",
+          "quantity": 2,
+          "inStock": true,
+          "category": "Burger",
+          "supplierPrice": 4000,
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "supplierName": "BurgerMouse",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "platformMargin": 1500,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "cartId": 1770301492647,
+          "price": 5500,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt"
+        }
+      ],
+      "promo": {
+        "discount": 500,
+        "partnerLevel": "Standard",
+        "discountAmount": 500,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "status": "validated",
+        "code": "DA-MOU-940",
+        "partnerCommission": 600,
+        "platformGain": 1900
+      },
+      "status": "Terminé",
+      "details": {
+        "deliveryFee": 991,
+        "finalTotal": 11491,
+        "scheduledTime": null,
+        "notes": "",
+        "paymentMethod": "Espèces",
+        "method": "Livraison",
+        "deliveryDistance": "0.99",
+        "discount": 500,
+        "subTotal": 11000,
+        "scheduledDate": null
+      },
+      "code": "CMD-802979",
+      "customer": {
+        "location": {
+          "lng": 11.861054872818695,
+          "lat": -4.796870183466884
+        },
+        "address": "Taman industries limited, Avenue Benoît Loembet, Lumumba ",
+        "name": "hgfghj",
+        "phone": "7654567"
+      },
+      "lastUpdated": {
+        "seconds": 1770302124,
+        "nanoseconds": 860000000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "createdAt": {
+        "seconds": 1770301521,
+        "nanoseconds": 859000000
+      },
+      "supplierName": "BurgerMouse"
+    },
+    {
+      "id": "d1WpXQSALlNKOUH7mg41",
+      "customer": {
+        "address": "Avenue Charles de Gaulle, Brazzaville",
+        "phone": "06 683 34 53",
+        "name": "Jean Dupont",
+        "location": null
+      },
+      "status": "Terminé",
+      "details": {
+        "method": "Retrait",
+        "notes": "",
+        "subTotal": 5000,
+        "paymentMethod": "Espèces",
+        "discount": 300,
+        "finalTotal": 4700,
+        "scheduledDate": "2026-02-09",
+        "deliveryDistance": 0,
+        "scheduledTime": "23:59",
+        "deliveryFee": 0
+      },
+      "settlementStatus": "pending",
+      "promo": {
+        "partnerLevel": "Standard",
+        "status": "validated",
+        "discount": 300,
+        "platformGain": 2000,
+        "partnerId": "0yNiNtBHzTgK9nNBgffz",
+        "code": "DA-ARG-750"
+      },
+      "code": "CMD-1770591501431",
+      "createdAt": {
+        "seconds": 1770591502,
+        "nanoseconds": 684000000
+      },
+      "supplierName": "Christ",
+      "items": [
+        {
+          "supplierPrice": 1500,
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierName": "Christ",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "price": 2500,
+          "buyingPrice": 0,
+          "quantity": 2,
+          "category": "shawarma",
+          "name": "shawara poulet",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo="
+        }
+      ],
+      "lastUpdated": {
+        "seconds": 1770591654,
+        "nanoseconds": 140000000
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770591648,
+          "nanoseconds": 695000000
+        },
+        "En attente": {
+          "seconds": 1770591502,
+          "nanoseconds": 684000000
+        },
+        "Livré": {
+          "seconds": 1770591654,
+          "nanoseconds": 140000000
+        },
+        "En livraison": {
+          "seconds": 1770591650,
+          "nanoseconds": 196000000
+        }
+      }
+    },
+    {
+      "id": "giSpoFQiQcHnKBWO4JxH",
+      "items": [
+        {
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "cartId": 1770299182336,
+          "inStock": true,
+          "category": "pizzas",
+          "platformMargin": 1000,
+          "quantity": 4,
+          "price": 3500,
+          "buyingPrice": 0,
+          "supplierPrice": 2500,
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "id": "4syaciEgmcxdygP2IYvo",
+          "description": "",
+          "supplierName": "BurgerMouse",
+          "status": "active",
+          "name": "Pizza viande",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt"
+        }
+      ],
+      "promo": {
+        "platformGain": 2800,
+        "partnerCommission": 600,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discountAmount": 600,
+        "partnerLevel": "Standard",
+        "status": "validated",
+        "discount": 600,
+        "code": "DA-MOU-940"
+      },
+      "supplierName": "BurgerMouse",
+      "customer": {
+        "location": {
+          "lng": 11.842415067445137,
+          "lat": -4.796861694445604
+        },
+        "phone": "2345678",
+        "name": "gfhjkl",
+        "address": "Rue A1.385, Roc de Tchikobo, Pointe-Noire "
+      },
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770300842,
+          "nanoseconds": 415000000
+        },
+        "En attente": {
+          "seconds": 1770299222,
+          "nanoseconds": 719000000
+        },
+        "En préparation": {
+          "seconds": 1770300838,
+          "nanoseconds": 477000000
+        },
+        "En livraison": {
+          "seconds": 1770300839,
+          "nanoseconds": 238000000
+        }
+      },
+      "createdAt": {
+        "seconds": 1770299222,
+        "nanoseconds": 719000000
+      },
+      "code": "CMD-715709",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "lastUpdated": {
+        "seconds": 1770300842,
+        "nanoseconds": 415000000
+      },
+      "status": "Terminé",
+      "details": {
+        "discount": 600,
+        "subTotal": 14000,
+        "paymentMethod": "Espèces",
+        "scheduledDate": null,
+        "finalTotal": 14649,
+        "notes": "",
+        "deliveryDistance": "1.25",
+        "deliveryFee": 1249,
+        "method": "Livraison",
+        "scheduledTime": null
+      }
+    },
+    {
+      "id": "iqU7y7ls0B3bpipyiQqa",
+      "details": {
+        "paymentMethod": "Espèces",
+        "notes": "",
+        "deliveryDistance": "1.66",
+        "discount": 300,
+        "scheduledTime": null,
+        "method": "Livraison",
+        "subTotal": 5000,
+        "deliveryFee": 1664,
+        "finalTotal": 6364,
+        "scheduledDate": null
+      },
+      "settlementStatus": "paid",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770299505,
+          "nanoseconds": 470000000
+        },
+        "En préparation": {
+          "seconds": 1770300901,
+          "nanoseconds": 957000000
+        },
+        "Livré": {
+          "seconds": 1770300906,
+          "nanoseconds": 242000000
+        },
+        "En livraison": {
+          "seconds": 1770300903,
+          "nanoseconds": 373000000
+        }
+      },
+      "supplierName": "Christ",
+      "lastUpdated": {
+        "seconds": 1770300906,
+        "nanoseconds": 242000000
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "promo": {
+        "discount": 300,
+        "discountAmount": 300,
+        "status": "validated",
+        "partnerLevel": "Standard",
+        "platformGain": 1400,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "partnerCommission": 300
+      },
+      "items": [
+        {
+          "quantity": 2,
+          "status": "active",
+          "price": 2500,
+          "name": "shawara poulet",
+          "buyingPrice": 0,
+          "description": "",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "inStock": true,
+          "cartId": 1770299464831,
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "platformMargin": 1000,
+          "supplierName": "Christ",
+          "category": "shawarma",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "supplierPrice": 1500
+        }
+      ],
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "code": "CMD-761171",
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "status": "Terminé",
+      "customer": {
+        "name": "zszxfcgvhbjnk",
+        "phone": "2345678",
+        "address": "Avenue Félix Eboué, Djinji, Pointe-Noire ",
+        "location": {
+          "lng": 11.8403304,
+          "lat": -4.8010356
+        }
+      },
+      "createdAt": {
+        "seconds": 1770299505,
+        "nanoseconds": 470000000
+      }
+    },
+    {
+      "id": "jAw9dzFD9L39UlX2mNO6",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770300829,
+          "nanoseconds": 45000000
+        },
+        "En livraison": {
+          "seconds": 1770300825,
+          "nanoseconds": 793000000
+        },
+        "En préparation": {
+          "seconds": 1770300824,
+          "nanoseconds": 729000000
+        },
+        "En attente": {
+          "seconds": 1770298993,
+          "nanoseconds": 812000000
+        }
+      },
+      "lastUpdated": {
+        "seconds": 1770300829,
+        "nanoseconds": 45000000
+      },
+      "details": {
+        "deliveryFee": 0,
+        "scheduledDate": "2026-02-13",
+        "finalTotal": 6700,
+        "notes": "sdfghjkl",
+        "scheduledTime": "16:42",
+        "deliveryDistance": 0,
+        "discount": 300,
+        "method": "Retrait",
+        "paymentMethod": "Espèces",
+        "subTotal": 7000
+      },
+      "createdAt": {
+        "seconds": 1770298993,
+        "nanoseconds": 812000000
+      },
+      "supplierName": "BurgerMouse",
+      "status": "Terminé",
+      "customer": {
+        "address": "Retrait Boutique",
+        "name": "dfghjkbgtuyi",
+        "location": null,
+        "phone": "5768989"
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "items": [
+        {
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "buyingPrice": 0,
+          "description": "",
+          "name": "Pizza viande",
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "category": "pizzas",
+          "supplierPrice": 2500,
+          "supplierName": "BurgerMouse",
+          "inStock": true,
+          "id": "4syaciEgmcxdygP2IYvo",
+          "price": 3500,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "quantity": 2,
+          "platformMargin": 1000,
+          "status": "active",
+          "cartId": 1770298900273
+        }
+      ],
+      "promo": {
+        "discount": 300,
+        "code": "DA-MOU-940",
+        "discountAmount": 300,
+        "platformGain": 1400,
+        "partnerCommission": 300,
+        "partnerLevel": "Standard",
+        "status": "validated",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo"
+      },
+      "code": "CMD-276032"
+    },
+    {
+      "id": "mn2rJ9kAc54RYCsew3Gr",
+      "createdAt": {
+        "seconds": 1770301780,
+        "nanoseconds": 8000000
+      },
+      "code": "CMD-864344",
+      "customer": {
+        "name": "cvbnm",
+        "location": {
+          "lng": 11.84701010506686,
+          "lat": -4.790767109384173
+        },
+        "phone": "3456789",
+        "address": "Avenue Massafi, Roc de Tchikobo, Pointe-Noire "
+      },
+      "details": {
+        "discount": 450,
+        "method": "Livraison",
+        "notes": "",
+        "scheduledDate": null,
+        "finalTotal": 7759,
+        "paymentMethod": "Espèces",
+        "deliveryFee": 709,
+        "deliveryDistance": "0.71",
+        "scheduledTime": null,
+        "subTotal": 7500
+      },
+      "status": "Terminé",
+      "items": [
+        {
+          "price": 2500,
+          "inStock": true,
+          "quantity": 3,
+          "buyingPrice": 0,
+          "platformMargin": 1000,
+          "description": "",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "cartId": 1770301755501,
+          "status": "active",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "supplierPrice": 1500,
+          "category": "shawarma",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "name": "shawara poulet",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "supplierName": "Christ"
+        }
+      ],
+      "settlementStatus": "paid",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "supplierName": "Christ",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770302071,
+          "nanoseconds": 922000000
+        },
+        "En préparation": {
+          "seconds": 1770302067,
+          "nanoseconds": 419000000
+        },
+        "En attente": {
+          "seconds": 1770301780,
+          "nanoseconds": 8000000
+        },
+        "En livraison": {
+          "seconds": 1770302069,
+          "nanoseconds": 126000000
+        }
+      },
+      "lastUpdated": {
+        "seconds": 1770302071,
+        "nanoseconds": 922000000
+      },
+      "promo": {
+        "status": "validated",
+        "platformGain": 2100,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "partnerCommission": 450,
+        "discountAmount": 450,
+        "discount": 450,
+        "code": "DA-MOU-940",
+        "partnerLevel": "Standard"
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "settlementId": "2wzfGEFLD04bjPteKldG"
+    },
+    {
+      "id": "qU7XTzd4X6mX0rhhmq9z",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "customer": {
+        "name": "Splendeur",
+        "address": "Boulevard du Général Charles de Gaulle, Losange, Pointe-Noire ",
+        "phone": "066850312",
+        "location": {
+          "lat": -4.796229462104832,
+          "lng": 11.850857734680178
+        }
+      },
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "items": [
+        {
+          "name": "shawara poulet",
+          "buyingPrice": 0,
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "status": "active",
+          "quantity": 3,
+          "inStock": true,
+          "supplierPrice": 1500,
+          "category": "shawarma",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "supplierName": "Christ",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "platformMargin": 1000,
+          "description": "",
+          "cartId": 1770299895310,
+          "price": 2500,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ"
+        }
+      ],
+      "lastUpdated": {
+        "seconds": 1770300923,
+        "nanoseconds": 502000000
+      },
+      "code": "CMD-208996",
+      "promo": {
+        "platformGain": 2100,
+        "partnerCommission": 450,
+        "partnerLevel": "Standard",
+        "code": "DA-MOU-940",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discount": 450,
+        "discountAmount": 450,
+        "status": "validated"
+      },
+      "details": {
+        "method": "Livraison",
+        "subTotal": 7500,
+        "deliveryFee": 500,
+        "paymentMethod": "Espèces",
+        "deliveryDistance": "0.43",
+        "scheduledTime": null,
+        "scheduledDate": null,
+        "discount": 450,
+        "notes": "",
+        "finalTotal": 7550
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770299979,
+          "nanoseconds": 155000000
+        },
+        "Livré": {
+          "seconds": 1770300923,
+          "nanoseconds": 502000000
+        },
+        "En livraison": {
+          "seconds": 1770300914,
+          "nanoseconds": 856000000
+        },
+        "En préparation": {
+          "seconds": 1770300913,
+          "nanoseconds": 865000000
+        }
+      },
+      "status": "Terminé",
+      "createdAt": {
+        "seconds": 1770299979,
+        "nanoseconds": 155000000
+      },
+      "supplierName": "Christ",
+      "settlementStatus": "paid"
+    },
+    {
+      "id": "rIWifDq3kBxvOiKSHiW1",
+      "promo": {
+        "status": "validated",
+        "partnerCommission": 1500,
+        "code": "DA-MOU-940",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "discount": 1500,
+        "partnerLevel": "Standard",
+        "discountAmount": 1500,
+        "platformGain": 7000
+      },
+      "details": {
+        "finalTotal": 24462,
+        "paymentMethod": "Espèces",
+        "deliveryFee": 962,
+        "discount": 1500,
+        "deliveryDistance": "0.96",
+        "notes": "",
+        "scheduledTime": null,
+        "subTotal": 25000,
+        "method": "Livraison",
+        "scheduledDate": null
+      },
+      "status": "Terminé",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "code": "CMD-132896",
+      "supplierName": "Christ",
+      "items": [
+        {
+          "platformMargin": 1000,
+          "supplierName": "Christ",
+          "supplierPrice": 1500,
+          "status": "active",
+          "buyingPrice": 0,
+          "quantity": 10,
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "name": "shawara poulet",
+          "description": "",
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "cartId": 1770301795156,
+          "category": "shawarma",
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "inStock": true,
+          "price": 2500
+        }
+      ],
+      "createdAt": {
+        "seconds": 1770301817,
+        "nanoseconds": 320000000
+      },
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770302073,
+          "nanoseconds": 298000000
+        },
+        "Livré": {
+          "seconds": 1770302077,
+          "nanoseconds": 822000000
+        },
+        "En attente": {
+          "seconds": 1770301817,
+          "nanoseconds": 320000000
+        },
+        "En livraison": {
+          "seconds": 1770302074,
+          "nanoseconds": 355000000
+        }
+      },
+      "customer": {
+        "name": "xcvbnkl",
+        "address": "Rue A1.385, Roc de Tchikobo, Pointe-Noire ",
+        "phone": "23456789",
+        "location": {
+          "lng": 11.844819946948114,
+          "lat": -4.795885880187639
+        }
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "settlementStatus": "paid",
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "lastUpdated": {
+        "seconds": 1770302077,
+        "nanoseconds": 822000000
+      }
+    },
+    {
+      "id": "sDQK2qG1kluVQ4sVeFrM",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "code": "CMD-132159",
+      "paidAt": {
+        "seconds": 1770156444,
+        "nanoseconds": 385000000
+      },
+      "supplierName": "BurgerMouse",
+      "status": "Terminé",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770155554,
+          "nanoseconds": 161000000
+        },
+        "En attente": {
+          "seconds": 1770155442,
+          "nanoseconds": 870000000
+        },
+        "En livraison": {
+          "seconds": 1770155555,
+          "nanoseconds": 842000000
+        },
+        "Livré": {
+          "seconds": 1770155558,
+          "nanoseconds": 969000000
+        }
+      },
+      "settlementId": "LTPILcb23eIqOJV70A4n",
+      "settlementStatus": "paid",
+      "createdAt": {
+        "seconds": 1770155442,
+        "nanoseconds": 870000000
+      },
+      "customer": {
+        "name": "Alnasse ",
+        "location": {
+          "lng": 11.8534802,
+          "lat": -4.7926205
+        },
+        "phone": "06 456 2633",
+        "address": "54, Avenue Du Mgr Theophile Mbemba, Roc de Tchikobo "
+      },
+      "lastUpdated": {
+        "seconds": 1770155558,
+        "nanoseconds": 969000000
+      },
+      "promo": {
+        "partnerLevel": "Standard",
+        "code": "DA-SPL-212",
+        "partnerCommission": 6000,
+        "status": "validated",
+        "discount": 5000,
+        "partnerId": "C9WQRjaNYqeTEmnrxpbX",
+        "platformGain": 19000,
+        "discountAmount": 5000
+      },
+      "items": [
+        {
+          "supplierPrice": 4000,
+          "status": "active",
+          "supplierName": "BurgerMouse",
+          "name": "Burger Stake",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "cartId": 1770155136361,
+          "price": 5500,
+          "inStock": true,
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "category": "Burger",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "platformMargin": 1500,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "quantity": 20,
+          "buyingPrice": 0
+        }
+      ],
+      "details": {
+        "subTotal": 110000,
+        "notes": "",
+        "finalTotal": 105500,
+        "scheduledDate": null,
+        "paymentMethod": "Espèces",
+        "discount": 5000,
+        "deliveryFee": 500,
+        "method": "Livraison",
+        "deliveryDistance": "0.07",
+        "scheduledTime": null
+      }
+    },
+    {
+      "id": "swY9ERqai2phD6ZYxKrW",
+      "createdAt": {
+        "seconds": 1770301863,
+        "nanoseconds": 232000000
+      },
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770302084,
+          "nanoseconds": 757000000
+        },
+        "En attente": {
+          "seconds": 1770301863,
+          "nanoseconds": 232000000
+        },
+        "En préparation": {
+          "seconds": 1770302079,
+          "nanoseconds": 31000000
+        },
+        "En livraison": {
+          "seconds": 1770302080,
+          "nanoseconds": 77000000
+        }
+      },
+      "settlementId": "2wzfGEFLD04bjPteKldG",
+      "lastUpdated": {
+        "seconds": 1770302084,
+        "nanoseconds": 757000000
+      },
+      "details": {
+        "finalTotal": 24046,
+        "subTotal": 25000,
+        "paymentMethod": "Espèces",
+        "deliveryFee": 546,
+        "discount": 1500,
+        "scheduledTime": null,
+        "method": "Livraison",
+        "scheduledDate": null,
+        "notes": "",
+        "deliveryDistance": "0.55"
+      },
+      "promo": {
+        "code": "DA-MOU-940",
+        "discount": 1500,
+        "partnerCommission": 1500,
+        "platformGain": 7000,
+        "status": "validated",
+        "partnerLevel": "Standard",
+        "discountAmount": 1500,
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo"
+      },
+      "supplierName": "Christ",
+      "settlementStatus": "paid",
+      "status": "Terminé",
+      "customer": {
+        "phone": "3456789",
+        "address": "Rue de Tchiminzi, Roc de Tchikobo, Pointe-Noire ",
+        "location": {
+          "lng": 11.84812665626464,
+          "lat": -4.793711691234108
+        },
+        "name": "dfghjfghjk"
+      },
+      "items": [
+        {
+          "image": "https://media.istockphoto.com/id/1421688556/fr/photo/shawarma-de-b%C5%93uf-sur-fond-sombre-shawarma-au-b%C5%93uf-dans-du-pain-pita.webp?a=1&b=1&s=612x612&w=0&k=20&c=nAPejZoBTyca69OpGcNhixxRm9tULSKOL3BCRbt2BVo=",
+          "status": "active",
+          "category": "shawarma",
+          "description": "",
+          "buyingPrice": 0,
+          "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+          "name": "shawara poulet",
+          "supplierPrice": 1500,
+          "price": 2500,
+          "platformMargin": 1000,
+          "quantity": 10,
+          "createdAt": "2026-02-05T13:50:13.837Z",
+          "cartId": 1770301824285,
+          "supplierName": "Christ",
+          "id": "4V0JFLW2b3El9Y3gGREr",
+          "inStock": true
+        }
+      ],
+      "supplierId": "1zohQZ7IeOlcj8NIuYeQ",
+      "paidAt": {
+        "seconds": 1770591622,
+        "nanoseconds": 341000000
+      },
+      "code": "CMD-947974"
+    },
+    {
+      "id": "xTyLYImkHKzATIfpJGie",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770596721,
+          "nanoseconds": 120000000
+        },
+        "Livré": {
+          "seconds": 1770598057,
+          "nanoseconds": 128000000
+        },
+        "En préparation": {
+          "seconds": 1770598051,
+          "nanoseconds": 635000000
+        },
+        "En livraison": {
+          "seconds": 1770598053,
+          "nanoseconds": 19000000
+        }
+      },
+      "lastUpdated": {
+        "seconds": 1770598057,
+        "nanoseconds": 128000000
+      },
+      "status": "Terminé",
+      "settlementStatus": "pending",
+      "code": "CMD-1770596719783",
+      "customer": {
+        "location": {
+          "lng": 11.844737364205832,
+          "distance": 0.9567950681433411,
+          "lat": -4.795499199252955,
+          "addressName": "Rue A1.387, Roc de Tchikobo, Pointe-Noire"
+        },
+        "address": "songolo",
+        "name": "pb de donnees",
+        "phone": "6555434567"
+      },
+      "supplierName": "BurgerMouse",
+      "createdAt": {
+        "seconds": 1770596721,
+        "nanoseconds": 120000000
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "details": {
+        "scheduledTime": null,
+        "finalTotal": 6307,
+        "notes": "",
+        "deliveryDistance": "0.96",
+        "method": "Livraison",
+        "scheduledDate": null,
+        "subTotal": 5500,
+        "paymentMethod": "Mobile Money",
+        "deliveryFee": 957,
+        "discount": 150
+      },
+      "promo": {
+        "partnerLevel": "Standard",
+        "code": "DA-ARG-750",
+        "discount": 150,
+        "platformGain": 2457,
+        "partnerId": "0yNiNtBHzTgK9nNBgffz",
+        "status": "validated"
+      },
+      "items": [
+        {
+          "supplierPrice": 4000,
+          "buyingPrice": 0,
+          "price": 5500,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "name": "Burger Stake",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "category": "Burger",
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "quantity": 1,
+          "supplierName": "BurgerMouse"
+        }
+      ]
+    },
+    {
+      "id": "yKTUZsexDr6MXjTSGhUG",
+      "statusHistory": {
+        "En attente": {
+          "seconds": 1770298886,
+          "nanoseconds": 69000000
+        },
+        "En préparation": {
+          "seconds": 1770300817,
+          "nanoseconds": 406000000
+        },
+        "En livraison": {
+          "seconds": 1770300820,
+          "nanoseconds": 486000000
+        },
+        "Livré": {
+          "seconds": 1770300823,
+          "nanoseconds": 425000000
+        }
+      },
+      "status": "Terminé",
+      "supplierName": "BurgerMouse",
+      "promo": {
+        "partnerCommission": 600,
+        "discount": 600,
+        "status": "validated",
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "partnerLevel": "Standard",
+        "code": "DA-MOU-940",
+        "platformGain": 2800,
+        "discountAmount": 600
+      },
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "items": [
+        {
+          "supplierPrice": 2500,
+          "inStock": true,
+          "price": 3500,
+          "supplierName": "BurgerMouse",
+          "status": "active",
+          "cartId": 1770298832803,
+          "buyingPrice": 0,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "quantity": 4,
+          "platformMargin": 1000,
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "id": "4syaciEgmcxdygP2IYvo",
+          "description": "",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "category": "pizzas",
+          "name": "Pizza viande"
+        }
+      ],
+      "createdAt": {
+        "seconds": 1770298886,
+        "nanoseconds": 69000000
+      },
+      "code": "CMD-590633",
+      "details": {
+        "finalTotal": 13400,
+        "deliveryDistance": 0,
+        "notes": "",
+        "subTotal": 14000,
+        "scheduledDate": "2026-02-08",
+        "discount": 600,
+        "scheduledTime": "17:41",
+        "method": "Retrait",
+        "paymentMethod": "Espèces",
+        "deliveryFee": 0
+      },
+      "customer": {
+        "location": null,
+        "name": "cvhjkkjhv",
+        "address": "Retrait Boutique",
+        "phone": "34567899"
+      },
+      "lastUpdated": {
+        "seconds": 1770300823,
+        "nanoseconds": 425000000
+      }
+    },
+    {
+      "id": "yQAVyi9bAFrnIEytshap",
+      "statusHistory": {
+        "Livré": {
+          "seconds": 1770302112,
+          "nanoseconds": 20000000
+        },
+        "En préparation": {
+          "seconds": 1770302107,
+          "nanoseconds": 412000000
+        },
+        "En attente": {
+          "seconds": 1770301448,
+          "nanoseconds": 703000000
+        },
+        "En livraison": {
+          "seconds": 1770302109,
+          "nanoseconds": 167000000
+        }
+      },
+      "status": "Terminé",
+      "details": {
+        "subTotal": 3500,
+        "deliveryFee": 2631,
+        "method": "Livraison",
+        "discount": 150,
+        "paymentMethod": "Espèces",
+        "deliveryDistance": "2.63",
+        "scheduledTime": null,
+        "scheduledDate": null,
+        "notes": "",
+        "finalTotal": 5981
+      },
+      "code": "CMD-953178",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "createdAt": {
+        "seconds": 1770301448,
+        "nanoseconds": 703000000
+      },
+      "lastUpdated": {
+        "seconds": 1770302112,
+        "nanoseconds": 20000000
+      },
+      "supplierName": "BurgerMouse",
+      "customer": {
+        "address": "Base Aeroport, Pointe-Noire, Lumumba (arrondissement 1) ",
+        "name": "sdfghjk",
+        "phone": "09876543",
+        "location": {
+          "lng": 11.875132710423669,
+          "lat": -4.8015635518166615
+        }
+      },
+      "promo": {
+        "partnerId": "NlOcRu9sjkKDGx6yGWfo",
+        "code": "DA-MOU-940",
+        "discountAmount": 150,
+        "partnerCommission": 150,
+        "partnerLevel": "Standard",
+        "platformGain": 700,
+        "discount": 150,
+        "status": "validated"
+      },
+      "items": [
+        {
+          "status": "active",
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "price": 3500,
+          "supplierName": "BurgerMouse",
+          "id": "4syaciEgmcxdygP2IYvo",
+          "quantity": 1,
+          "cartId": 1770301375408,
+          "platformMargin": 1000,
+          "createdAt": "2026-02-05T08:52:12.169Z",
+          "description": "",
+          "buyingPrice": 0,
+          "name": "Pizza viande",
+          "category": "pizzas",
+          "image": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBpenphfGVufDB8fDB8fHww",
+          "supplierPrice": 2500,
+          "inStock": true
+        }
+      ]
+    },
+    {
+      "id": "yT4qrI1ztk5xcRmue3YO",
+      "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+      "status": "Terminé",
+      "supplierName": "BurgerMouse",
+      "statusHistory": {
+        "En préparation": {
+          "seconds": 1770302114,
+          "nanoseconds": 211000000
+        },
+        "En livraison": {
+          "seconds": 1770302115,
+          "nanoseconds": 291000000
+        },
+        "Livré": {
+          "seconds": 1770302117,
+          "nanoseconds": 932000000
+        },
+        "En attente": {
+          "seconds": 1770301484,
+          "nanoseconds": 965000000
+        }
+      },
+      "customer": {
+        "location": {
+          "lng": 11.845120556885977,
+          "lat": -4.791280700132327
+        },
+        "phone": "9876543",
+        "address": "Boulevard des Mâ Loango, Djinji, Pointe-Noire ",
+        "name": "vbnm"
+      },
+      "promo": null,
+      "details": {
+        "paymentMethod": "Espèces",
+        "subTotal": 5500,
+        "scheduledDate": null,
+        "deliveryDistance": "0.89",
+        "scheduledTime": null,
+        "finalTotal": 6394,
+        "notes": "",
+        "discount": 0,
+        "deliveryFee": 894,
+        "method": "Livraison"
+      },
+      "lastUpdated": {
+        "seconds": 1770302117,
+        "nanoseconds": 932000000
+      },
+      "items": [
+        {
+          "supplierPrice": 4000,
+          "platformMargin": 1500,
+          "supplierId": "EVQ7ywTdEcgNGoXXyLWt",
+          "name": "Burger Stake",
+          "createdAt": "2026-02-03T00:07:53.624Z",
+          "buyingPrice": 0,
+          "cartId": 1770301468048,
+          "quantity": 1,
+          "description": "Poivre, 4stacke hacheees, oignon ",
+          "supplierName": "BurgerMouse",
+          "inStock": true,
+          "price": 5500,
+          "id": "DFGiiBzf7uDMtw1DfPYx",
+          "category": "Burger",
+          "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YnVyZ2VyfGVufDB8fDB8fHww",
+          "status": "active"
+        }
+      ],
+      "code": "CMD-738984",
+      "createdAt": {
+        "seconds": 1770301484,
+        "nanoseconds": 965000000
+      }
+    }
+  ],
+  "partners": [
+    {
+      "id": "0yNiNtBHzTgK9nNBgffz",
+      "level": "Standard",
+      "isActive": true,
+      "termsAcceptedAt": {
+        "seconds": 1770576295,
+        "nanoseconds": 714000000
+      },
+      "createdAt": {
+        "seconds": 1770576295,
+        "nanoseconds": 714000000
+      },
+      "totalWithdrawn": 0,
+      "promoCode": "DA-ARG-750",
+      "totalEarnings": 0,
+      "fullName": "Money  Argent",
+      "password": "money1234",
+      "phone": "06 374 23 45",
+      "totalSales": 0,
+      "walletBalance": 0
+    },
+    {
+      "id": "C9WQRjaNYqeTEmnrxpbX",
+      "level": "Standard",
+      "createdAt": {
+        "seconds": 1770140303,
+        "nanoseconds": 145000000
+      },
+      "phone": "06 758 38 92",
+      "password": "sem242",
+      "totalEarnings": 6600,
+      "totalWithdrawn": 3000,
+      "totalSales": 2,
+      "fullName": "Sem Splendeur",
+      "walletBalance": 3600,
+      "isActive": true,
+      "promoCode": "DA-SPL-212",
+      "termsAcceptedAt": {
+        "seconds": 1770140303,
+        "nanoseconds": 145000000
+      }
+    },
+    {
+      "id": "NlOcRu9sjkKDGx6yGWfo",
+      "totalEarnings": 29100,
+      "totalWithdrawn": 19100,
+      "totalSales": 30,
+      "fullName": "Mouanda Triomphe",
+      "createdAt": {
+        "seconds": 1768768775,
+        "nanoseconds": 759000000
+      },
+      "phone": "06 682 03 12",
+      "level": "Standard",
+      "walletBalance": 10000,
+      "password": "mouanda-08",
+      "isActive": true,
+      "promoCode": "DA-MOU-940"
+    }
+  ]
+}

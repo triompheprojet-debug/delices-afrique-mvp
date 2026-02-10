@@ -16,7 +16,7 @@ const PartnersAdmin = () => {
   const [partners, setPartners] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [orders, setOrders] = useState([]); // Nécessaire pour les stats globales
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
 
   // État pour la Modale "Détail Partenaire"
   const [selectedPartner, setSelectedPartner] = useState(null);

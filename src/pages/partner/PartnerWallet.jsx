@@ -1,361 +1,609 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
-import { doc, onSnapshot, collection, addDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { 
-  Wallet, Lock, ArrowRight, History, 
-  AlertTriangle, CheckCircle, Clock, Loader2, X,
-  Smartphone, User, DollarSign, CreditCard
+  Wallet, DollarSign, TrendingUp, Clock, CheckCircle,
+  AlertCircle, Download, Eye, EyeOff, Smartphone, 
+  ChevronRight, Zap, Target, ArrowUpRight, ArrowDownRight,
+  Calendar, Gift, Sparkles, CreditCard, Users, Trophy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const PartnerWallet = () => {
   const [partner, setPartner] = useState(null);
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showBalance, setShowBalance] = useState(true);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  
+  const [withdrawForm, setWithdrawForm] = useState({
+    amount: '',
+    recipientName: '',
+    phone: '',
+    operator: 'MTN Money'
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [withdrawError, setWithdrawError] = useState('');
 
-  // États Modales
-  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  const [stats, setStats] = useState({
+    availableBalance: 0,
+    totalEarned: 0,
+    totalWithdrawn: 0,
+    pendingWithdrawals: 0,
+    projectedMonthly: 0,
+    last7DaysEarnings: []
+  });
 
-  // État Formulaire
-  const [form, setForm] = useState({ amount: '', phone: '', name: '' });
-  const [errors, setErrors] = useState({});
-
-  // SEUILS DE RETRAIT
+  // ✅ CORRECTION #1: Seuils de retrait par niveau (2000/5000/10000 selon PDF)
   const WITHDRAWAL_THRESHOLDS = {
     'Standard': 2000,
-    'Actif': 3000,
-    'Premium': 5000
+    'Actif': 5000,
+    'Premium': 10000
   };
 
   useEffect(() => {
     const sessionStr = sessionStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
-
-    const unsubPartner = onSnapshot(doc(db, "partners", sessionData.id), (doc) => {
-      setPartner({ id: doc.id, ...doc.data() });
-    });
-
-    const qWithdrawals = query(
-      collection(db, "withdrawals"), 
-      where("partnerId", "==", sessionData.id),
-      orderBy("createdAt", "desc")
-    );
-    const unsubWithdrawals = onSnapshot(qWithdrawals, (snap) => {
-      setWithdrawals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    
+    const unsubscribe = onSnapshot(doc(db, "partners", sessionData.id), (doc) => {
+      const partnerData = { id: doc.id, ...doc.data() };
+      setPartner(partnerData);
+      loadWithdrawals(sessionData.id);
+      loadEarningsData(sessionData.id);
+      
+      setStats(prev => ({
+        ...prev,
+        availableBalance: partnerData.walletBalance || 0,
+        totalEarned: partnerData.totalEarnings || 0,
+        totalWithdrawn: partnerData.totalWithdrawn || 0
+      }));
+      
       setLoading(false);
     });
 
-    return () => { unsubPartner(); unsubWithdrawals(); };
+    return () => unsubscribe();
   }, []);
 
-  // --- LOGIQUE DE VALIDATION ---
-  const validateForm = () => {
-    const newErrors = {};
-    const threshold = WITHDRAWAL_THRESHOLDS[partner.level || 'Standard'];
-    const amountNum = Number(form.amount);
-
-    // 1. Validation Montant
-    if (!form.amount || amountNum <= 0) newErrors.amount = "Montant invalide.";
-    else if (amountNum < threshold) newErrors.amount = `Le minimum est de ${threshold} FCFA.`;
-    else if (amountNum > (partner.walletBalance || 0)) newErrors.amount = "Solde insuffisant.";
-
-    // 2. Validation Téléphone (Airtel vs MTN)
-    const phoneClean = form.phone.replace(/\s/g, ''); // Enlève les espaces
-    const isAirtel = /^0[45]/.test(phoneClean); // Commence par 04 ou 05
-    const isMtn = /^06/.test(phoneClean);       // Commence par 06
-
-    if (!form.phone) newErrors.phone = "Numéro requis.";
-    else if (!isAirtel && !isMtn) newErrors.phone = "Doit commencer par 04, 05 (Airtel) ou 06 (MTN).";
-
-    // 3. Validation Nom
-    if (!form.name.trim()) newErrors.name = "Le nom du bénéficiaire est requis.";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleOpenModal = () => {
-    // On préremplit avec les infos du profil pour gagner du temps
-    setForm({ 
-        amount: '', 
-        phone: partner.phone || '', 
-        name: partner.fullName || '' 
-    });
-    setErrors({});
-    setIsWithdrawModalOpen(true);
-  };
-
-  const handleSubmitWithdrawal = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setProcessing(true);
+  const loadWithdrawals = async (partnerId) => {
     try {
-      await addDoc(collection(db, "withdrawals"), {
-        partnerId: partner.id,
-        partnerName: partner.fullName, // Nom du compte partenaire
-        recipientName: form.name,      // Nom renseigné pour le Mobile Money
-        phone: form.phone,
-        operator: /^06/.test(form.phone) ? 'MTN Mobile Money' : 'Airtel Money',
-        amount: Number(form.amount),
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
+      const q = query(
+        collection(db, "withdrawals"),
+        where("partnerId", "==", partnerId),
+        orderBy("createdAt", "desc")
+      );
       
-      setIsWithdrawModalOpen(false);
-      setIsSuccessModalOpen(true); // Affiche le succès
+      const snapshot = await getDocs(q);
+      const withdrawalsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       
+      setWithdrawals(withdrawalsData);
+      
+      const pending = withdrawalsData
+        .filter(w => w.status === 'pending')
+        .reduce((sum, w) => sum + w.amount, 0);
+      
+      setStats(prev => ({ ...prev, pendingWithdrawals: pending }));
     } catch (error) {
-      console.error(error);
-      alert("Erreur de connexion. Veuillez réessayer.");
-    } finally {
-      setProcessing(false);
+      console.error('Erreur chargement retraits:', error);
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-brown"/></div>;
-  if (!partner) return null;
+  // ✅ CORRECTION #2: Calculs dates DYNAMIQUES (pas de valeurs fixes)
+  const loadEarningsData = async (partnerId) => {
+    try {
+      const q = query(
+        collection(db, "orders"),
+        where("promo.partnerId", "==", partnerId),
+        where("status", "in", ["Livré", "Terminé"]),
+        orderBy("createdAt", "desc")
+      );
+      
+      const snapshot = await getDocs(q);
+      const orders = snapshot.docs.map(doc => doc.data());
+      
+      // ✅ Gains 30 derniers jours (dynamique)
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const recentEarnings = orders.filter(order => {
+        const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
+        return orderDate >= thirtyDaysAgo;
+      });
+      
+      const last30Total = recentEarnings.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+      const projectedMonthly = Math.round(last30Total);
+      
+      // ✅ Graphique 7 derniers jours
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - i));
+        date.setHours(0, 0, 0, 0);
+        return {
+          date: date.toISOString().split('T')[0],
+          day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+          earnings: 0
+        };
+      });
+      
+      orders.forEach(order => {
+        const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
+        orderDate.setHours(0, 0, 0, 0);
+        const dateStr = orderDate.toISOString().split('T')[0];
+        const dayData = last7Days.find(d => d.date === dateStr);
+        if (dayData) {
+          dayData.earnings += order.promo?.partnerCommission || 0;
+        }
+      });
+      
+      setStats(prev => ({
+        ...prev,
+        projectedMonthly,
+        last7DaysEarnings: last7Days
+      }));
+    } catch (error) {
+      console.error('Erreur chargement earnings:', error);
+    }
+  };
 
-  const currentThreshold = WITHDRAWAL_THRESHOLDS[partner.level || 'Standard'];
+  const handleWithdrawRequest = async (e) => {
+    e.preventDefault();
+    setWithdrawError('');
+    
+    const amount = Number(withdrawForm.amount);
+    const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || 2000;
+    
+    // ✅ Validation avec seuil par niveau
+    if (amount < minWithdrawal) {
+      setWithdrawError(`Le montant minimum pour le niveau ${partner.level} est de ${minWithdrawal.toLocaleString()} FCFA`);
+      return;
+    }
+    
+    if (amount > stats.availableBalance) {
+      setWithdrawError('Solde insuffisant');
+      return;
+    }
+    
+    if (!withdrawForm.recipientName || !withdrawForm.phone) {
+      setWithdrawError('Veuillez remplir tous les champs');
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      await addDoc(collection(db, "withdrawals"), {
+        partnerId: partner.id,
+        partnerName: partner.fullName,
+        recipientName: withdrawForm.recipientName,
+        phone: withdrawForm.phone,
+        operator: withdrawForm.operator,
+        amount: amount,
+        status: 'pending',
+        transactionRef: null,
+        createdAt: serverTimestamp(),
+        processedAt: null
+      });
+      
+      alert('✅ Demande de retrait envoyée ! Vous recevrez votre paiement sous 24-48h.');
+      setShowWithdrawModal(false);
+      setWithdrawForm({
+        amount: '',
+        recipientName: '',
+        phone: '',
+        operator: 'MTN Money'
+      });
+      
+      loadWithdrawals(partner.id);
+    } catch (error) {
+      console.error('Erreur retrait:', error);
+      setWithdrawError('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '-';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Chargement du portefeuille...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner?.level] || 2000;
 
   return (
-    <div className="space-y-8 pb-24 animate-fade-in relative">
-
-      {/* TITRE */}
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-brand-brown/10 rounded-xl text-brand-brown">
-           <Wallet size={24}/>
-        </div>
-        <div>
-           <h1 className="text-2xl font-serif font-bold text-gray-800">Mon Portefeuille</h1>
-           <p className="text-sm text-gray-500">Gérez vos gains et vos retraits.</p>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        
-        {/* CARTE SOLDE (Style Carte Bancaire) */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between h-72">
-           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-           
-           <div className="flex justify-between items-start z-10">
-              <div>
-                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Solde Disponible</p>
-                 <h2 className="text-4xl font-mono font-bold tracking-tight text-white">
-                    {(partner.walletBalance || 0).toLocaleString()} <span className="text-lg text-gray-400">FCFA</span>
-                 </h2>
-              </div>
-              <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
-                  <CreditCard className="text-white" size={24}/>
-              </div>
-           </div>
-
-           <div className="z-10 space-y-4">
-              <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/10 w-fit px-3 py-1.5 rounded-lg border border-white/10">
-                 <Lock size={12}/> Seuil minimum : {currentThreshold.toLocaleString()} FCFA
-              </div>
-
-              {/* BOUTON D'ACTION PRINCIPAL */}
-              <button 
-                onClick={handleOpenModal}
-                disabled={partner.walletBalance <= 0}
-                className="w-full py-4 bg-brand-brown text-white hover:bg-brand-beige hover:text-brand-brown rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Demander un retrait <ArrowRight size={18}/>
-              </button>
-           </div>
+    <div className="space-y-6 animate-fade-in pb-20 md:pb-8">
+      
+      {/* Hero Card Portefeuille */}
+      <div className="relative bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-3xl p-8 sm:p-10 overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl"></div>
         </div>
 
-        {/* RÉSUMÉ */}
-        <div className="space-y-4">
-           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                 <CheckCircle size={24}/>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl">
+                <Wallet className="text-white" size={28} />
               </div>
               <div>
-                 <p className="text-xs font-bold text-gray-400 uppercase">Total Retiré</p>
-                 <p className="text-2xl font-bold text-gray-800">
-                    {(partner.totalWithdrawn || 0).toLocaleString()} FCFA
-                 </p>
+                <p className="text-purple-200 text-sm font-medium">Portefeuille</p>
+                <p className="text-white font-bold text-lg">{partner?.fullName}</p>
               </div>
-           </div>
-
-           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                 <Clock size={24}/>
-              </div>
-              <div>
-                 <p className="text-xs font-bold text-gray-400 uppercase">En attente</p>
-                 <p className="text-2xl font-bold text-gray-800">
-                    {withdrawals.filter(w => w.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()} FCFA
-                 </p>
-              </div>
-           </div>
-        </div>
-      </div>
-
-      {/* HISTORIQUE */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-         <div className="p-6 border-b border-gray-100 flex items-center gap-2">
-            <History size={20} className="text-gray-400"/>
-            <h3 className="font-bold text-gray-800">Dernières transactions</h3>
-         </div>
-         {withdrawals.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">Aucune transaction récente.</div>
-         ) : (
-            <div className="divide-y divide-gray-50">
-               {withdrawals.map((w) => (
-                  <div key={w.id} className="p-5 flex justify-between items-center hover:bg-gray-50 transition">
-                     <div>
-                        <p className="font-bold text-gray-800 text-sm">{w.operator} - {w.phone}</p>
-                        <p className="text-xs text-gray-500">{new Date(w.createdAt?.seconds * 1000).toLocaleDateString()}</p>
-                     </div>
-                     <div className="text-right">
-                        <p className="font-mono font-bold text-gray-800">-{w.amount.toLocaleString()} F</p>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                           w.status === 'paid' ? 'bg-green-100 text-green-700' : 
-                           w.status === 'rejected' ? 'bg-red-100 text-red-700' : 
-                           'bg-yellow-100 text-yellow-700'
-                        }`}>
-                           {w.status === 'paid' ? 'Payé' : w.status === 'rejected' ? 'Rejeté' : 'En traitement'}
-                        </span>
-                     </div>
-                  </div>
-               ))}
             </div>
-         )}
+            
+            <button 
+              onClick={() => setShowBalance(!showBalance)}
+              className="bg-white/20 backdrop-blur-md hover:bg-white/30 p-3 rounded-xl transition-all"
+            >
+              {showBalance ? <Eye className="text-white" size={20} /> : <EyeOff className="text-white" size={20} />}
+            </button>
+          </div>
+
+          <div className="mb-8">
+            <p className="text-purple-200 text-sm mb-2">Solde disponible</p>
+            <h2 className="text-5xl sm:text-6xl font-black text-white mb-4">
+              {showBalance ? `${stats.availableBalance.toLocaleString()} F` : '••••••'}
+            </h2>
+            
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl">
+                <p className="text-purple-100 text-xs mb-0.5">Gains totaux</p>
+                <p className="text-white font-bold">{stats.totalEarned.toLocaleString()} F</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl">
+                <p className="text-purple-100 text-xs mb-0.5">Déjà retiré</p>
+                <p className="text-white font-bold">{stats.totalWithdrawn.toLocaleString()} F</p>
+              </div>
+              {/* ✅ Affichage seuil par niveau */}
+              <div className="bg-yellow-500/20 backdrop-blur-md px-4 py-2 rounded-xl border border-yellow-400/30">
+                <p className="text-yellow-100 text-xs mb-0.5">Minimum retrait ({partner?.level})</p>
+                <p className="text-yellow-300 font-bold">{minWithdrawal.toLocaleString()} F</p>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setShowWithdrawModal(true)}
+            disabled={stats.availableBalance < minWithdrawal}
+            className="w-full bg-white hover:bg-purple-50 text-purple-900 font-bold py-4 rounded-2xl transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Download size={20} />
+            {stats.availableBalance < minWithdrawal 
+              ? `Minimum ${minWithdrawal.toLocaleString()} F requis` 
+              : 'Demander un retrait'
+            }
+          </button>
+          
+          {stats.pendingWithdrawals > 0 && (
+            <div className="mt-3 bg-yellow-500/20 border border-yellow-400/30 rounded-xl px-4 py-3 flex items-center gap-3">
+              <Clock className="text-yellow-400" size={18} />
+              <p className="text-yellow-100 text-sm font-medium">
+                {stats.pendingWithdrawals.toLocaleString()} F en attente de traitement
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* --- MODALE DE RETRAIT (POP-UP) --- */}
-      <AnimatePresence>
-        {isWithdrawModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsWithdrawModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            
-            <motion.div 
-              initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-              className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="font-serif font-bold text-xl text-gray-800">Demander un retrait</h3>
-                <button onClick={() => setIsWithdrawModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition"><X size={20}/></button>
+      {/* Analytics & Projections */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        
+        {/* Graphique 7 jours */}
+        <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
+          <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <TrendingUp className="text-green-400" size={20} />
+            Évolution des gains
+          </h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.last7DaysEarnings}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis 
+                  dataKey="day" 
+                  stroke="#64748B" 
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis 
+                  stroke="#64748B" 
+                  style={{ fontSize: '12px' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1E293B', 
+                    border: '1px solid #334155',
+                    borderRadius: '12px'
+                  }}
+                />
+                <Bar dataKey="earnings" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Projection & Objectifs */}
+        <div className="space-y-4">
+          
+          <div className="bg-gradient-to-br from-green-600/20 to-green-700/20 border-2 border-green-500/30 rounded-2xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="bg-green-500/20 p-3 rounded-xl">
+                <Target className="text-green-400" size={24} />
               </div>
-              
-              <form onSubmit={handleSubmitWithdrawal} className="p-6 space-y-5">
-                
-                {/* Champ Montant */}
+              <div className="text-right">
+                <p className="text-green-400 text-xs font-bold uppercase mb-1">Projection mensuelle</p>
+                <h4 className="text-3xl font-black text-green-400">
+                  {stats.projectedMonthly.toLocaleString()} F
+                </h4>
+              </div>
+            </div>
+            <p className="text-green-300/80 text-sm">
+              Basé sur vos performances des 30 derniers jours
+            </p>
+          </div>
+
+          <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
+            <h4 className="text-sm font-bold text-slate-400 uppercase mb-4">Objectifs suggérés</h4>
+            <div className="space-y-3">
+              {[
+                { label: '10K ce mois', target: 10000, icon: Gift },
+                { label: '50K en 3 mois', target: 50000, icon: Trophy },
+                { label: '100K en 6 mois', target: 100000, icon: Sparkles }
+              ].map((goal, i) => {
+                const progress = (stats.totalEarned / goal.target) * 100;
+                return (
+                  <div key={i} className="bg-slate-950/50 border border-slate-800 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <goal.icon className="text-purple-400" size={16} />
+                        <span className="text-slate-300 text-sm font-medium">{goal.label}</span>
+                      </div>
+                      <span className="text-slate-400 text-xs">{Math.min(progress, 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full transition-all"
+                        style={{ width: `${Math.min(progress, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Historique retraits */}
+      <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
+        <h3 className="text-lg font-bold text-slate-100 mb-6 flex items-center gap-2">
+          <Calendar className="text-blue-400" size={20} />
+          Historique des retraits
+        </h3>
+
+        {withdrawals.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-slate-800/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Download className="text-slate-600" size={28} />
+            </div>
+            <p className="text-slate-400 text-sm">Aucun retrait effectué pour le moment</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {withdrawals.map((withdrawal) => (
+              <div 
+                key={withdrawal.id}
+                className="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-purple-500/30 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    withdrawal.status === 'paid' 
+                      ? 'bg-green-500/20' 
+                      : 'bg-yellow-500/20'
+                  }`}>
+                    {withdrawal.status === 'paid' ? (
+                      <CheckCircle className="text-green-400" size={20} />
+                    ) : (
+                      <Clock className="text-yellow-400" size={20} />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <p className="text-slate-200 font-medium text-sm mb-1">
+                      {withdrawal.amount.toLocaleString()} FCFA
+                    </p>
+                    <p className="text-slate-500 text-xs">
+                      {formatDate(withdrawal.createdAt)} · {withdrawal.operator}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                  withdrawal.status === 'paid'
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                    : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                }`}>
+                  {withdrawal.status === 'paid' ? 'Payé' : 'En attente'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Retrait */}
+      <AnimatePresence>
+        {showWithdrawModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => !submitting && setShowWithdrawModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full"
+            >
+              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Montant à retirer</label>
+                  <h3 className="text-2xl font-bold text-slate-100 mb-2">
+                    Demander un retrait
+                  </h3>
+                  <p className="text-slate-400 text-sm">
+                    Recevez votre argent sous 24-48h via Mobile Money
+                  </p>
+                </div>
+                <button 
+                  onClick={() => !submitting && setShowWithdrawModal(false)}
+                  disabled={submitting}
+                  className="text-slate-400 hover:text-slate-200 transition-all disabled:opacity-50"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 mb-6">
+                <p className="text-purple-400 text-xs font-bold uppercase mb-1">Solde disponible</p>
+                <p className="text-3xl font-black text-purple-400">{stats.availableBalance.toLocaleString()} F</p>
+                <p className="text-purple-300/70 text-xs mt-2">
+                  Minimum {partner?.level} : {minWithdrawal.toLocaleString()} FCFA
+                </p>
+              </div>
+
+              <form onSubmit={handleWithdrawRequest} className="space-y-4">
+                
+                <div>
+                  <label className="text-slate-400 text-xs font-bold uppercase mb-2 block">
+                    Montant à retirer
+                  </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <input 
-                      type="number" 
-                      placeholder="Ex: 5000"
-                      className={`w-full pl-10 pr-4 py-3 rounded-xl border font-bold text-lg outline-none focus:ring-2 focus:ring-brand-brown/20 transition ${errors.amount ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                      value={form.amount}
-                      onChange={e => setForm({...form, amount: e.target.value})}
+                      type="number"
+                      required
+                      min={minWithdrawal}
+                      max={stats.availableBalance}
+                      placeholder={`Ex: ${minWithdrawal}`}
+                      value={withdrawForm.amount}
+                      onChange={(e) => setWithdrawForm({...withdrawForm, amount: e.target.value})}
+                      className="w-full bg-slate-950/50 border border-slate-800 text-slate-200 pl-11 pr-4 py-3 rounded-xl focus:outline-none focus:border-purple-500/50 transition-all"
                     />
                   </div>
-                  {errors.amount && <p className="text-xs text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertTriangle size={10}/> {errors.amount}</p>}
+                  <p className="text-slate-500 text-xs mt-1">Minimum: {minWithdrawal.toLocaleString()} FCFA</p>
                 </div>
 
-                {/* Champ Téléphone */}
                 <div>
-                   <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Numéro Mobile Money</label>
-                   <div className="relative">
-                     <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
-                     <input 
-                       type="tel" 
-                       placeholder="06 123 4567"
-                       className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-brand-brown/20 transition ${errors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                       value={form.phone}
-                       onChange={e => setForm({...form, phone: e.target.value})}
-                     />
-                   </div>
-                   {errors.phone ? (
-                     <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.phone}</p>
-                   ) : (
-                     <p className="text-[10px] text-gray-400 mt-1 ml-1">Airtel (04/05) ou MTN (06) uniquement.</p>
-                   )}
+                  <label className="text-slate-400 text-xs font-bold uppercase mb-2 block">
+                    Nom du bénéficiaire
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="Nom complet"
+                    value={withdrawForm.recipientName}
+                    onChange={(e) => setWithdrawForm({...withdrawForm, recipientName: e.target.value})}
+                    className="w-full bg-slate-950/50 border border-slate-800 text-slate-200 px-4 py-3 rounded-xl focus:outline-none focus:border-purple-500/50 transition-all"
+                  />
                 </div>
 
-                {/* Champ Nom */}
                 <div>
-                   <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Nom du bénéficiaire</label>
-                   <div className="relative">
-                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
-                     <input 
-                       type="text" 
-                       placeholder="Nom complet enregistré sur la SIM"
-                       className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-brand-brown/20 transition ${errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                       value={form.name}
-                       onChange={e => setForm({...form, name: e.target.value})}
-                     />
-                   </div>
-                   {errors.name && <p className="text-xs text-red-500 font-bold mt-1 ml-1">{errors.name}</p>}
+                  <label className="text-slate-400 text-xs font-bold uppercase mb-2 block">
+                    Numéro Mobile Money
+                  </label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input 
+                      type="tel"
+                      required
+                      placeholder="06 123 4567"
+                      value={withdrawForm.phone}
+                      onChange={(e) => setWithdrawForm({...withdrawForm, phone: e.target.value})}
+                      className="w-full bg-slate-950/50 border border-slate-800 text-slate-200 pl-11 pr-4 py-3 rounded-xl focus:outline-none focus:border-purple-500/50 transition-all"
+                    />
+                  </div>
                 </div>
 
-                {/* Info Solde */}
-                <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 flex items-center gap-2">
-                   <Wallet size={16}/>
-                   <span>Solde actuel : <strong>{(partner.walletBalance || 0).toLocaleString()} FCFA</strong></span>
+                <div>
+                  <label className="text-slate-400 text-xs font-bold uppercase mb-2 block">
+                    Opérateur
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['MTN Money', 'Airtel Money'].map((op) => (
+                      <button
+                        key={op}
+                        type="button"
+                        onClick={() => setWithdrawForm({...withdrawForm, operator: op})}
+                        className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                          withdrawForm.operator === op
+                            ? 'bg-purple-600 text-white border-2 border-purple-500'
+                            : 'bg-slate-950/50 text-slate-400 border-2 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        {op}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {withdrawError && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    {withdrawError}
+                  </div>
+                )}
 
                 <button 
-                  type="submit" 
-                  disabled={processing}
-                  className="w-full bg-brand-brown text-white font-bold py-4 rounded-xl shadow-lg hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {processing ? <Loader2 className="animate-spin"/> : 'Confirmer le retrait'}
+                  {submitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Traitement...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={20} />
+                      Confirmer le retrait
+                    </>
+                  )}
                 </button>
               </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
-      {/* --- MODALE SUCCÈS --- */}
-      <AnimatePresence>
-        {isSuccessModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
-             <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-               onClick={() => setIsSuccessModalOpen(false)}
-             />
-             <motion.div 
-               initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
-               className="bg-white w-full max-w-sm rounded-3xl p-8 text-center relative z-10 shadow-2xl"
-             >
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                   <CheckCircle className="text-green-600 w-10 h-10 animate-bounce"/>
-                </div>
-                <h3 className="font-serif font-bold text-2xl text-gray-800 mb-2">Demande envoyée !</h3>
-                <p className="text-gray-500 mb-6 leading-relaxed">
-                   Votre demande de retrait de <span className="font-bold text-gray-800">{Number(form.amount).toLocaleString()} FCFA</span> a bien été reçue.
-                   <br/><br/>
-                   <span className="bg-green-50 text-green-700 px-2 py-1 rounded font-bold text-sm">
-                     Vous recevrez votre virement dans moins de 24 heures.
-                   </span>
+              <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl px-4 py-3">
+                <p className="text-blue-300 text-xs">
+                  <strong>Important :</strong> Vérifiez bien votre numéro. Les transferts sont irréversibles.
                 </p>
-                <button 
-                  onClick={() => setIsSuccessModalOpen(false)}
-                  className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black transition"
-                >
-                  Fermer
-                </button>
-             </motion.div>
-          </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

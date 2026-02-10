@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Outil de Correction Ultime - Délices d'Afrique</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 { color: #667eea; margin-bottom: 10px; font-size: 2.5em; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        
+        .critical-warning {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: 3px solid #ff4757;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #results {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card .label {
+            color: #6c757d;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        
+        .step-number {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .problem-list {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .problem-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-left: 4px solid #ff6b6b;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Outil de Correction Ultime</h1>
+        <p class="subtitle">Uniformisation et correction complète de toutes les commandes</p>
+        
+        <div class="critical-warning">
+            ⚠️ <strong>AVERTISSEMENT CRITIQUE :</strong> Cet outil va modifier TOUTES les commandes pour les uniformiser.
+            Faites un backup AVANT de continuer ! Une fois exécuté, l'opération est irréversible.
+        </div>
+        
+        <!-- ÉTAPE 1 -->
+        <div class="section">
+            <h2>
+                <span class="step-number">1</span>
+                📊 Diagnostic Approfondi
+            </h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                Analyse complète de toutes les commandes pour identifier TOUS les problèmes.
+            </p>
+            <button class="btn btn-primary" onclick="runFullDiagnostic()" id="diagBtn">
+                🔍 Lancer le diagnostic complet
+            </button>
+            
+            <div class="stats" id="statsContainer" style="display: none;">
+                <div class="stat-card">
+                    <div class="number" id="totalOrders">0</div>
+                    <div class="label">Total commandes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="withPromo">0</div>
+                    <div class="label">Avec code promo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="needsFix">0</div>
+                    <div class="label">À corriger</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="missingCommission">0</div>
+                    <div class="label">Commission manquante</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ÉTAPE 2 -->
+        <div class="section">
+            <h2>
+                <span class="step-number">2</span>
+                💾 Backup de Sécurité
+            </h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                Exportez TOUTES vos données avant toute modification.
+            </p>
+            <button class="btn btn-success" onclick="exportFullBackup()" id="backupBtn">
+                💾 Exporter backup complet (JSON)
+            </button>
+        </div>
+        
+        <!-- ÉTAPE 3 -->
+        <div class="section">
+            <h2>
+                <span class="step-number">3</span>
+                🔧 Correction Automatique Complète
+            </h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                Cette opération va uniformiser TOUTES les commandes selon la structure documentée.
+            </p>
+            <button class="btn btn-danger" onclick="confirmAndFixAll()" id="fixBtn" disabled>
+                ⚠️ CORRIGER TOUTES LES COMMANDES (IRRÉVERSIBLE)
+            </button>
+        </div>
+        
+        <!-- RÉSULTATS -->
+        <div class="section">
+            <h2>📝 Journal des opérations</h2>
+            <div id="results">En attente de diagnostic...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSBL4sltzn_OGlp6J3xQqdXUBoznfVOG0",
+            authDomain: "delices-afrique-prod.firebaseapp.com",
+            projectId: "delices-afrique-prod",
+            storageBucket: "delices-afrique-prod.firebasestorage.app",
+            messagingSenderId: "407817669888",
+            appId: "1:407817669888:web:971e432028fc1d2234f7e5"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let diagResults = null;
+        
+        // 📋 RÈGLES DE COMMISSION SELON NIVEAU
+        const COMMISSION_RULES = {
+            'Standard': { commission: 150, discount: 150 },
+            'Actif': { commission: 250, discount: 200 },
+            'Premium': { commission: 300, discount: 200 }
+        };
+        
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            resultsDiv.innerHTML += `<span class="${color}">[${timestamp}] ${message}</span>\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        // 🔍 DIAGNOSTIC COMPLET
+        window.runFullDiagnostic = async function() {
+            const btn = document.getElementById('diagBtn');
+            const fixBtn = document.getElementById('fixBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Analyse en cours... <span class="loading"></span>';
+            
+            document.getElementById('results').innerHTML = '';
+            log('🔍 === DIAGNOSTIC COMPLET DES COMMANDES ===\n', 'info');
+            
+            try {
+                const ordersRef = collection(db, 'orders');
+                const snapshot = await getDocs(ordersRef);
+                
+                const problems = {
+                    total: 0,
+                    withPromo: 0,
+                    needsFix: [],
+                    missingCommission: [],
+                    missingStatus: [],
+                    wrongDiscount: [],
+                    extraFields: [],
+                    correct: []
+                };
+                
+                snapshot.docs.forEach(docSnap => {
+                    const order = { id: docSnap.id, ...docSnap.data() };
+                    problems.total++;
+                    
+                    if (!order.promo || !order.promo.partnerId) {
+                        return; // Commande sans promo = OK
+                    }
+                    
+                    problems.withPromo++;
+                    const issues = [];
+                    let needsFix = false;
+                    
+                    // ✅ VÉRIFICATION 1 : partnerCommission manquante
+                    if (order.promo.partnerCommission === undefined || order.promo.partnerCommission === null) {
+                        issues.push('❌ CRITIQUE: partnerCommission manquante');
+                        problems.missingCommission.push({
+                            code: order.code,
+                            level: order.promo.partnerLevel || 'Standard',
+                            discount: order.promo.discount || 0
+                        });
+                        needsFix = true;
+                    }
+                    
+                    // ✅ VÉRIFICATION 2 : promo.status manquant
+                    if (!order.promo.status) {
+                        issues.push('❌ promo.status manquant');
+                        problems.missingStatus.push(order.code);
+                        needsFix = true;
+                    }
+                    
+                    // ✅ VÉRIFICATION 3 : Doublon discountAmount
+                    if (order.promo.discountAmount !== undefined) {
+                        issues.push('⚠️ Champ discountAmount en doublon');
+                        needsFix = true;
+                    }
+                    
+                    // ✅ VÉRIFICATION 4 : Champs inutiles dans items
+                    if (order.items && order.items.length > 0) {
+                        const item = order.items[0];
+                        if (item.buyingPrice !== undefined || 
+                            item.cartId !== undefined || 
+                            item.createdAt !== undefined || 
+                            item.description !== undefined ||
+                            item.inStock !== undefined ||
+                            item.status !== undefined ||
+                            item.platformMargin !== undefined) {
+                            issues.push('⚠️ Champs inutiles dans items[]');
+                            problems.extraFields.push(order.code);
+                            needsFix = true;
+                        }
+                    }
+                    
+                    // ✅ VÉRIFICATION 5 : platformGain manquant
+                    if (order.promo.platformGain === undefined) {
+                        issues.push('⚠️ platformGain manquant');
+                        needsFix = true;
+                    }
+                    
+                    if (needsFix) {
+                        problems.needsFix.push({
+                            code: order.code,
+                            id: order.id,
+                            issues
+                        });
+                    } else {
+                        problems.correct.push(order.code);
+                    }
+                });
+                
+                diagResults = problems;
+                
+                // Afficher les stats
+                document.getElementById('statsContainer').style.display = 'grid';
+                document.getElementById('totalOrders').textContent = problems.total;
+                document.getElementById('withPromo').textContent = problems.withPromo;
+                document.getElementById('needsFix').textContent = problems.needsFix.length;
+                document.getElementById('missingCommission').textContent = problems.missingCommission.length;
+                
+                log(`\n📊 === RÉSULTATS DU DIAGNOSTIC ===\n`, 'info');
+                log(`Total commandes : ${problems.total}`, 'info');
+                log(`Avec code promo : ${problems.withPromo}`, 'info');
+                log(`Structure correcte : ${problems.correct.length}`, 'success');
+                log(`À corriger : ${problems.needsFix.length}\n`, problems.needsFix.length > 0 ? 'error' : 'success');
+                
+                if (problems.missingCommission.length > 0) {
+                    log(`\n🚨 PROBLÈME CRITIQUE : ${problems.missingCommission.length} commandes sans partnerCommission\n`, 'error');
+                    problems.missingCommission.forEach(item => {
+                        log(`  - ${item.code} (Niveau: ${item.level}, Discount: ${item.discount}F)`, 'error');
+                    });
+                }
+                
+                if (problems.missingStatus.length > 0) {
+                    log(`\n⚠️ ${problems.missingStatus.length} commandes sans promo.status`, 'warning');
+                }
+                
+                if (problems.extraFields.length > 0) {
+                    log(`\n⚠️ ${problems.extraFields.length} commandes avec champs inutiles dans items[]`, 'warning');
+                }
+                
+                if (problems.needsFix.length > 0) {
+                    log(`\n📋 Détails des problèmes (10 premiers) :\n`, 'info');
+                    problems.needsFix.slice(0, 10).forEach(order => {
+                        log(`  ${order.code}:`, 'warning');
+                        order.issues.forEach(issue => log(`    ${issue}`, 'warning'));
+                    });
+                    
+                    fixBtn.disabled = false;
+                    log(`\n✅ Diagnostic terminé. Cliquez sur "CORRIGER" pour uniformiser.`, 'success');
+                } else {
+                    log(`\n🎉 Toutes les commandes ont une structure correcte !`, 'success');
+                }
+                
+            } catch (error) {
+                log(`\n❌ ERREUR DIAGNOSTIC : ${error.message}`, 'error');
+                console.error(error);
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Lancer le diagnostic complet';
+        };
+        
+        // 🔧 CORRECTION COMPLÈTE
+        window.confirmAndFixAll = function() {
+            if (!diagResults) {
+                alert('Veuillez d\'abord lancer le diagnostic !');
+                return;
+            }
+            
+            const count = diagResults.needsFix.length;
+            const confirmed = confirm(
+                `⚠️⚠️⚠️ ATTENTION CRITIQUE ⚠️⚠️⚠️\n\n` +
+                `Cette opération va modifier ${count} commande(s).\n\n` +
+                `ACTIONS QUI SERONT EFFECTUÉES :\n` +
+                `✅ Ajout de partnerCommission (calculée selon niveau)\n` +
+                `✅ Ajout de promo.status\n` +
+                `✅ Ajout de platformGain\n` +
+                `❌ Suppression des champs inutiles dans items[]\n` +
+                `❌ Suppression de discountAmount (doublon)\n\n` +
+                `AVEZ-VOUS FAIT UN BACKUP ?\n\n` +
+                `Voulez-vous VRAIMENT continuer ?`
+            );
+            
+            if (confirmed) {
+                const doubleCheck = confirm(
+                    `DERNIÈRE CONFIRMATION\n\n` +
+                    `Êtes-vous ABSOLUMENT SÛR ?\n` +
+                    `Cette opération est IRRÉVERSIBLE !`
+                );
+                
+                if (doubleCheck) {
+                    fixAllOrders();
+                }
+            }
+        };
+        
+        async function fixAllOrders() {
+            const btn = document.getElementById('fixBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Correction en cours... <span class="loading"></span>';
+            
+            log('\n🔧 === DÉBUT DE LA CORRECTION COMPLÈTE ===\n', 'info');
+            
+            try {
+                const ordersRef = collection(db, 'orders');
+                const snapshot = await getDocs(ordersRef);
+                
+                let fixed = 0;
+                let errors = 0;
+                
+                for (const docSnap of snapshot.docs) {
+                    const order = { id: docSnap.id, ...docSnap.data() };
+                    
+                    if (!order.promo || !order.promo.partnerId) {
+                        continue;
+                    }
+                    
+                    const updates = {};
+                    const fieldsToDelete = {};
+                    let needsUpdate = false;
+                    
+                    // 🔧 CORRECTION 1 : Ajouter partnerCommission si manquante
+                    if (order.promo.partnerCommission === undefined || order.promo.partnerCommission === null) {
+                        const level = order.promo.partnerLevel || 'Standard';
+                        const rules = COMMISSION_RULES[level] || COMMISSION_RULES['Standard'];
+                        
+                        // Calculer selon le surplus si marge > 1000
+                        const totalSupplierPrice = order.items?.reduce((sum, item) => 
+                            sum + ((item.supplierPrice || 0) * item.quantity), 0
+                        ) || 0;
+                        
+                        const margin = order.details.subTotal - totalSupplierPrice;
+                        const surplus = margin - 1000;
+                        
+                        let commission = rules.commission;
+                        if (surplus > 0) {
+                            commission += Math.round(surplus * 0.30); // +30% du surplus
+                        }
+                        
+                        updates['promo.partnerCommission'] = commission;
+                        needsUpdate = true;
+                        log(`  ✅ ${order.code} : partnerCommission = ${commission}F (${level})`, 'success');
+                    }
+                    
+                    // 🔧 CORRECTION 2 : Ajouter promo.status
+                    if (!order.promo.status) {
+                        const status = (order.status === 'Livré' || order.status === 'Terminé') 
+                            ? 'validated' 
+                            : 'pending';
+                        
+                        updates['promo.status'] = status;
+                        needsUpdate = true;
+                    }
+                    
+                    // 🔧 CORRECTION 3 : Supprimer discountAmount (doublon)
+                    if (order.promo.discountAmount !== undefined) {
+                        fieldsToDelete['promo.discountAmount'] = deleteField();
+                        needsUpdate = true;
+                        log(`  🗑️ ${order.code} : Suppression discountAmount (doublon)`, 'info');
+                    }
+                    
+                    // 🔧 CORRECTION 4 : Calculer platformGain si manquant
+                    if (order.promo.platformGain === undefined) {
+                        const totalSupplierPrice = order.items?.reduce((sum, item) => 
+                            sum + ((item.supplierPrice || 0) * item.quantity), 0
+                        ) || 0;
+                        
+                        const commission = updates['promo.partnerCommission'] || order.promo.partnerCommission || 0;
+                        const discount = order.promo.discount || 0;
+                        
+                        const platformGain = order.details.finalTotal + discount - totalSupplierPrice - commission;
+                        
+                        updates['promo.platformGain'] = Math.max(0, platformGain);
+                        needsUpdate = true;
+                    }
+                    
+                    // 🔧 CORRECTION 5 : Nettoyer items[] (supprimer champs inutiles)
+                    if (order.items && order.items.length > 0) {
+                        const cleanedItems = order.items.map(item => ({
+                            id: item.id,
+                            name: item.name,
+                            category: item.category,
+                            image: item.image,
+                            price: item.price,
+                            quantity: item.quantity,
+                            supplierId: item.supplierId,
+                            supplierName: item.supplierName,
+                            supplierPrice: item.supplierPrice
+                        }));
+                        
+                        updates['items'] = cleanedItems;
+                        needsUpdate = true;
+                    }
+                    
+                    // Appliquer les mises à jour
+                    if (needsUpdate) {
+                        try {
+                            await updateDoc(doc(db, 'orders', order.id), {...updates, ...fieldsToDelete});
+                            fixed++;
+                        } catch (error) {
+                            errors++;
+                            log(`  ❌ ${order.code} : ERREUR - ${error.message}`, 'error');
+                        }
+                    }
+                }
+                
+                log(`\n✅ === CORRECTION TERMINÉE ===`, 'success');
+                log(`  Commandes corrigées : ${fixed}`, 'success');
+                log(`  Erreurs : ${errors}`, errors > 0 ? 'error' : 'info');
+                log(`\n🎉 Toutes les commandes ont été uniformisées !`, 'success');
+                log(`\n📋 Structure finale de promo :`, 'info');
+                log(`  ✅ code: string`, 'info');
+                log(`  ✅ discount: number`, 'info');
+                log(`  ✅ partnerCommission: number (calculée)`, 'info');
+                log(`  ✅ partnerId: string`, 'info');
+                log(`  ✅ partnerLevel: string`, 'info');
+                log(`  ✅ platformGain: number`, 'info');
+                log(`  ✅ status: "pending" | "validated"`, 'info');
+                
+                btn.innerHTML = '✅ Correction terminée avec succès';
+                
+            } catch (error) {
+                log(`\n❌ ERREUR FATALE : ${error.message}`, 'error');
+                console.error(error);
+                btn.disabled = false;
+                btn.innerHTML = '⚠️ CORRIGER TOUTES LES COMMANDES';
+            }
+        }
+        
+        // 💾 EXPORT BACKUP
+        window.exportFullBackup = async function() {
+            const btn = document.getElementById('backupBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Export en cours...';
+            
+            try {
+                log('\n💾 Export du backup...', 'info');
+                
+                const ordersRef = collection(db, 'orders');
+                const partnersRef = collection(db, 'partners');
+                
+                const [ordersSnap, partnersSnap] = await Promise.all([
+                    getDocs(ordersRef),
+                    getDocs(partnersRef)
+                ]);
+                
+                const backup = {
+                    exportDate: new Date().toISOString(),
+                    orders: ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    partners: partnersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                };
+                
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `backup-delices-afrique-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                log(`✅ Backup exporté : ${backup.orders.length} commandes + ${backup.partners.length} partenaires`, 'success');
+                
+            } catch (error) {
+                log(`❌ ERREUR EXPORT : ${error.message}`, 'error');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '💾 Exporter backup complet (JSON)';
+        };
+        
+    </script>
+</body>
+</html>

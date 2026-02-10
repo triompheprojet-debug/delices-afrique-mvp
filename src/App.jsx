@@ -10,6 +10,7 @@ import Contact from './pages/client/Contact';
 import About from './pages/client/About';
 import Checkout from './pages/client/Checkout';
 import Confirmation from './pages/client/Confirmation';
+import Cart from './pages/client/Cart';
 
 // Imports Pages Admin
 import AdminLayout from './components/layout/AdminLayout';
@@ -29,6 +30,7 @@ import PartnerRegister from './pages/partner/PartnerRegister';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
 import PartnerSales from './pages/partner/PartnerSales';
 import PartnerWallet from './pages/partner/PartnerWallet';
+import PartnerProgramInfo from './pages/partner/PartnerProgramInfo';
 
 import SupplierLayout from './pages/supplier/SupplierLayout';
 import SupplierLogin from './pages/supplier/SupplierLogin';
@@ -55,6 +57,7 @@ function App() {
                 <Route path="about" element={<About />} />
                 <Route path="checkout" element={<Checkout />} />
                 <Route path="confirmation" element={<Confirmation />} />
+                <Route path="Cart" element={<Cart />} />
               </Route>
 
               {/* === ESPACE ADMIN === */}
@@ -77,7 +80,7 @@ function App() {
                 <Route index element={<PartnerLogin />} />
                 <Route path="login" element={<PartnerLogin />} />
                 <Route path="register" element={<PartnerRegister />} />
-                
+                <Route path="program" element={<PartnerProgramInfo />} />
                 <Route path="dashboard" element={<PartnerDashboard />} />
                 <Route path="sales" element={<PartnerSales />} />
                 <Route path="wallet" element={<PartnerWallet />} />
