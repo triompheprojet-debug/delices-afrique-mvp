@@ -1,29 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { db } from '../../firebase';
 import { 
   collection, query, where, onSnapshot, addDoc, serverTimestamp, 
-  getDocs, updateDoc, doc 
+  doc, updateDoc
 } from 'firebase/firestore';
 import { useConfig } from '../../context/ConfigContext';
-import { Lock, Send, AlertTriangle, Clock, Loader, RefreshCw, Wallet } from 'lucide-react';
+import { 
+  Lock, Send, AlertTriangle, Clock, Loader, RefreshCw, Wallet, 
+  Home, Package, DollarSign, BookOpen, Menu, X, TrendingUp, Store,
+  LogOut, Shield, Gift
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ORDER_STATUS, WITHDRAWAL_STATUS } from '../../utils/constants';
 
 const SupplierLayout = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // ✅ Récupération de isClosedForNight pour la logique de blocage
   const { isClosedForNight, config, loading: configLoading } = useConfig();
   
   const [supplier, setSupplier] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingSettlement, setPendingSettlement] = useState(null);
-  const [realTimeDebt, setRealTimeDebt] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // ✅ ÉTAT UNIFIÉ POUR DETTE ET GAINS
+  const [financialStats, setFinancialStats] = useState({
+    platformDebt: 0, // Ce que le fournisseur doit payer à la plateforme
+    totalSupplierEarnings: 0, // Ce que le fournisseur gagne réellement
+    deliveryEarnings: 0,
+    productEarnings: 0
+  });
   
   const [transactionId, setTransactionId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // ✅ Référence pour éviter le recalcul pendant la validation
-  const isValidating = useRef(false);
 
   // 1. CHARGEMENT DU FOURNISSEUR
   useEffect(() => {
@@ -38,15 +51,6 @@ const SupplierLayout = () => {
       if (!snapshot.empty) {
         const supData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
         setSupplier(supData);
-        
-        // ✅ Utiliser directement la dette de Firestore si elle vient d'être mise à 0
-        const firestoreDebt = supData.wallet?.platformDebt || 0;
-        if (firestoreDebt === 0 && realTimeDebt > 0) {
-          console.log('✅ Dette remise à 0 par l\'admin, mise à jour locale');
-          setRealTimeDebt(0);
-          isValidating.current = false;
-        }
-        
         setLoading(false);
       } else {
         setSupplier(null);
@@ -60,128 +64,109 @@ const SupplierLayout = () => {
     return () => unsubscribe();
   }, [slug]);
 
-  // 2. CALCUL TEMPS RÉEL DE LA DETTE
+  // 2. CALCUL TEMPS RÉEL UNIFIÉ
   useEffect(() => {
     if (!supplier?.id) return;
 
-    const calculateDebt = async () => {
-      // ✅ NE PAS RECALCULER si en cours de validation
-      if (isValidating.current) {
-        console.log('⏸️ Validation en cours, recalcul ignoré');
-        return;
-      }
-
-      try {
-        const qOrders = query(
-          collection(db, 'orders'),
-          where('supplierId', '==', supplier.id),
-          where('status', 'in', ['Livré', 'Terminé'])
-        );
-        
-        const snapshot = await getDocs(qOrders);
-        let totalDebt = 0;
-
-        snapshot.forEach((doc) => {
-          const order = doc.data();
-          
-          // ✅ Ignorer les commandes déjà payées
-          if (order.settlementStatus === 'paid') return;
-
-          const items = order.items || [];
-          
-          items.forEach(item => {
-            const buyingPrice = Number(item.buyingPrice || item.supplierPrice || 0);
-            const sellingPrice = Number(item.price || 0);
-            const quantity = Number(item.quantity || 0);
-            
-            const productMargin = (sellingPrice - buyingPrice) * quantity;
-            totalDebt += productMargin;
-          });
-
-          const deliveryFee = Number(order.details?.deliveryFee || 0);
-          totalDebt += deliveryFee * 0.1;
-        });
-
-        console.log('📊 Dette calculée:', totalDebt);
-        setRealTimeDebt(totalDebt);
-
-        // ✅ Mise à jour Firestore SEULEMENT si différent
-        const currentFirestoreDebt = supplier.wallet?.platformDebt || 0;
-        if (Math.abs(totalDebt - currentFirestoreDebt) > 0.01) {
-          const supplierRef = doc(db, 'suppliers', supplier.id);
-          await updateDoc(supplierRef, {
-            'wallet.platformDebt': totalDebt,
-            'wallet.lastDebtUpdate': serverTimestamp()
-          });
-          console.log('💾 Dette mise à jour dans Firestore:', totalDebt);
-        }
-
-      } catch (error) {
-        console.error("Erreur calcul dette:", error);
-      }
-    };
-
-    calculateDebt();
-
-    // ✅ Recalculer SEULEMENT quand une commande change de statut
+    // Écoute des commandes pour calculer la dette en temps réel
     const qOrders = query(
       collection(db, 'orders'),
       where('supplierId', '==', supplier.id)
     );
     
-    const unsubOrders = onSnapshot(qOrders, (snapshot) => {
-      // Vérifier si une commande a changé de settlementStatus
-      const hasStatusChange = snapshot.docChanges().some(change => {
-        if (change.type === 'modified') {
-          const oldData = change.doc.metadata.hasPendingWrites ? null : change.doc.data();
-          return oldData && oldData.settlementStatus !== change.doc.data().settlementStatus;
+    const unsubOrders = onSnapshot(qOrders, async (snapshot) => {
+      let totalDebtToPlatform = 0;
+      let totalProductEarnings = 0;
+      let totalDeliveryEarnings = 0;
+
+      snapshot.docs.forEach((orderDoc) => {
+        const order = orderDoc.data();
+        const status = order.status;
+        
+        // ✅ RÈGLE : Dette et gains comptabilisés à partir de "En livraison", "Livré" ou "Terminé"
+        // Car c'est à ce moment que le fournisseur a encaissé l'argent ou est en route pour le faire.
+        const shouldCount = status === ORDER_STATUS.SHIPPING || status === ORDER_STATUS.DELIVERED || status === ORDER_STATUS.COMPLETED;
+        
+        if (shouldCount) {
+          // Ignorer si la dette de cette commande a déjà été réglée (statut PAID)
+          if (order.settlementStatus === WITHDRAWAL_STATUS.PAID) return;
+
+          // --- 1. CALCUL DE LA DETTE ENVERS LA PLATEFORME ---
+          // A. La dette sur le produit (stockée dans la commande sous 'platformDebt')
+          const productDebt = Number(order.platformDebt || 0);
+
+          // B. La dette sur la livraison (10% des frais de livraison) 
+          const deliveryFee = Number(order.details?.deliveryFee || 0);
+          const deliveryDebt = deliveryFee * 0.10; 
+
+          // Total à reverser pour cette commande
+          totalDebtToPlatform += (productDebt + deliveryDebt);
+
+          // --- 2. CALCUL DES GAINS FOURNISSEUR (POUR AFFICHAGE) ---
+          // A. Gains produits (Prix fournisseur)
+          const items = order.items || [];
+          items.forEach(item => {
+            // On prend le prix fournisseur s'il existe, sinon on estime (fallback)
+            const supplierPrice = Number(item.supplierPrice || 0); 
+            const quantity = Number(item.quantity || 0);
+            totalProductEarnings += supplierPrice * quantity;
+          });
+
+          // B. Gains livraison (90% restant)
+          totalDeliveryEarnings += deliveryFee * 0.90;
         }
-        return false;
       });
 
-      if (hasStatusChange) {
-        console.log('🔄 Changement de statut détecté, recalcul');
-        calculateDebt();
+      const totalEarnings = totalProductEarnings + totalDeliveryEarnings;
+
+      // ✅ MISE À JOUR DE L'ÉTAT LOCAL
+      setFinancialStats({
+        platformDebt: totalDebtToPlatform,
+        totalSupplierEarnings: totalEarnings,
+        productEarnings: totalProductEarnings,
+        deliveryEarnings: totalDeliveryEarnings
+      });
+
+      // ✅ MISE À JOUR FIRESTORE (Optimisation : seulement si changement > 10 FCFA pour éviter écritures excessives)
+      const currentFirestoreDebt = supplier.wallet?.platformDebt || 0;
+      const diff = Math.abs(totalDebtToPlatform - currentFirestoreDebt);
+
+      if (diff > 10) {
+        try {
+          const supplierRef = doc(db, 'suppliers', supplier.id);
+          await updateDoc(supplierRef, {
+            'wallet.platformDebt': totalDebtToPlatform,
+            'wallet.totalSupplierEarnings': totalEarnings,
+            'wallet.lastUpdate': serverTimestamp()
+          });
+        } catch (error) {
+          console.error("Erreur mise à jour Firestore:", error);
+        }
       }
     });
 
     return () => unsubOrders();
   }, [supplier?.id]);
 
-  // 3. ÉCOUTE DES SETTLEMENTS EN ATTENTE
+  // 3. ÉCOUTE DES SETTLEMENTS EN ATTENTE (Justificatifs envoyés)
   useEffect(() => {
     if (!supplier?.id) return;
 
     const qSettlements = query(
       collection(db, 'settlements'),
       where('supplierId', '==', supplier.id),
-      where('status', '==', 'pending')
+      where('status', '==', WITHDRAWAL_STATUS.PENDING)
     );
     
     const unsubSettlements = onSnapshot(qSettlements, (sSnap) => {
       if (!sSnap.empty) {
+        // On prend le plus récent
         const settlements = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        settlements.sort((a, b) => {
-          const aTime = a.createdAt?.seconds || 0;
-          const bTime = b.createdAt?.seconds || 0;
-          return bTime - aTime;
-        });
+        settlements.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         setPendingSettlement(settlements[0]);
-        
-        // ✅ Marquer comme en cours de validation
-        isValidating.current = true;
       } else {
         setPendingSettlement(null);
-        
-        // ✅ Validation terminée, autoriser les recalculs
-        if (isValidating.current) {
-          console.log('✅ Validation terminée');
-          isValidating.current = false;
-        }
       }
-    }, (error) => {
-      console.error("Erreur écoute settlements:", error);
-      setPendingSettlement(null);
     });
     
     return () => unsubSettlements();
@@ -190,269 +175,273 @@ const SupplierLayout = () => {
   // 4. ENVOI PAIEMENT DE FIN DE JOURNÉE
   const handleEndOfDayPayment = async (e) => {
     e.preventDefault();
-    if (!transactionId.trim()) return;
+    if (!transactionId.trim() || financialStats.platformDebt <= 0) return;
+
     setIsSubmitting(true);
-
     try {
-      const qUnpaid = query(
-        collection(db, 'orders'),
-        where('supplierId', '==', supplier.id),
-        where('status', 'in', ['Livré', 'Terminé'])
-      );
-      const snapshot = await getDocs(qUnpaid);
-      const orderIds = snapshot.docs
-        .map(d => ({id: d.id, ...d.data()}))
-        .filter(o => o.settlementStatus !== 'paid')
-        .map(o => o.id);
-
-      await addDoc(collection(db, "settlements"), {
+      await addDoc(collection(db, 'settlements'), {
         supplierId: supplier.id,
         supplierName: supplier.name,
-        amount: realTimeDebt,
-        transactionRef: transactionId.trim().toUpperCase(),
-        status: 'pending',
+        amount: financialStats.platformDebt,
+        transactionRef: transactionId.toUpperCase(),
+        status: WITHDRAWAL_STATUS.PENDING,
         createdAt: serverTimestamp(),
-        orderIds: orderIds, 
-        context: 'end_of_day_blocking',
-        type: 'settlement'
+        type: 'platform_payment',
+        period: new Date().toLocaleDateString('fr-FR') // Indique la date du jour payé
       });
       
+      alert(`✅ Paiement enregistré.\nRéférence: ${transactionId.toUpperCase()}\n\nVotre compte sera débloqué après validation de l'admin.`);
       setTransactionId('');
+      setIsSubmitting(false);
     } catch (error) {
-      console.error("Erreur paiement:", error);
-      alert("Erreur lors de l'envoi. Vérifiez votre connexion.");
-    } finally {
+      console.error("Erreur envoi paiement:", error);
+      alert("❌ Erreur lors de l'envoi. Réessayez.");
       setIsSubmitting(false);
     }
   };
 
-  // ÉCRAN DE CHARGEMENT
+  // --- RENDU CONDITIONNEL (LOADING / LOGIN) ---
+
   if (loading || configLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="text-white animate-spin mx-auto mb-4" size={48}/>
-          <p className="text-white text-sm animate-pulse">Chargement de votre espace...</p>
+          <Loader className="animate-spin text-purple-400 mx-auto mb-4" size={48}/>
+          <p className="text-slate-400 font-medium">Chargement de votre espace...</p>
         </div>
       </div>
     );
   }
 
-  // LIEN INVALIDE
   if (!supplier) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-6">
-        <div className="text-center p-10 bg-white rounded-3xl shadow-2xl border-2 border-red-200 max-w-md">
-          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle size={40} className="text-red-600"/>
-          </div>
-          <h1 className="text-3xl font-bold text-red-600 mb-3">Lien Invalide</h1>
-          <p className="text-gray-600 mb-6">
-            Ce lien d'accès fournisseur n'existe pas ou a été désactivé.
-          </p>
-          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-            <p className="text-sm text-red-700">
-              Vérifiez votre lien ou contactez l'administration.
-            </p>
-          </div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-md shadow-elegant">
+          <AlertTriangle className="text-red-400 mx-auto mb-4" size={48}/>
+          <h1 className="text-2xl font-bold text-slate-100 mb-2">Fournisseur introuvable</h1>
+          <Link to="/" className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl mt-4">
+            <Home size={18}/> Retour à l'accueil
+          </Link>
         </div>
       </div>
     );
   }
 
-  // BLOCAGE ADMIN MANUEL
-  if (supplier.status === 'suspended' || supplier.status === 'blocked') {
+  const isAuthenticated = sessionStorage.getItem('supplierAuthenticated') === supplier.id;
+
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-6">
-        <div className="bg-white p-10 rounded-3xl shadow-2xl text-center border-2 border-red-200 max-w-md">
-          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={40} className="text-red-600"/>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full shadow-elegant">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Lock className="text-white" size={32}/>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-100 mb-2">{supplier.name}</h1>
+            <p className="text-slate-400">Espace Fournisseur</p>
           </div>
-          <h1 className="text-3xl font-bold text-red-600 mb-3">Compte Suspendu</h1>
-          <p className="text-gray-600 mb-6">
-            Votre accès a été temporairement bloqué par l'administrateur.
-          </p>
-          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-            <p className="text-sm text-red-700">
-              Pour toute question, contactez l'administration au <strong>{config.phoneNumber}</strong>
-            </p>
-          </div>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (e.target.code.value === supplier.supplierCode) {
+              sessionStorage.setItem('supplierAuthenticated', supplier.id);
+              navigate(`/fournisseur/${supplier.accessSlug}/dashboard`);
+            } else {
+              alert('❌ Code incorrect');
+            }
+          }} className="space-y-4">
+            <input required type="text" name="code" placeholder="Code d'accès" className="w-full p-4 bg-slate-800 border border-slate-700 rounded-xl text-center text-white uppercase font-mono tracking-widest outline-none focus:border-purple-500"/>
+            <button type="submit" className="w-full bg-purple-600 text-white font-bold py-4 rounded-xl hover:bg-purple-700 transition">Se connecter</button>
+          </form>
         </div>
       </div>
     );
   }
 
-  // ✅ BLOCAGE FIN DE JOURNÉE
-  const isLoginPage = location.pathname.endsWith(slug) || location.pathname.endsWith(`${slug}/`);
+  // --- LOGIQUE DE BLOCAGE (NUIT + DETTE) ---
   
-  if (isClosedForNight && realTimeDebt > 0 && !isLoginPage) {
+  // Cas 1 : Justificatif envoyé, en attente de validation (Bloqué mais rassurant)
+  if (isClosedForNight && financialStats.platformDebt > 0 && pendingSettlement) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-          
-          <div className="bg-gradient-to-r from-brand-brown to-gray-800 p-8 text-center text-white relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0" style={{
-                backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}></div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-orange-600 p-8 rounded-2xl max-w-2xl w-full">
+          <div className="text-center mb-6">
+            <Clock className="text-orange-400 mx-auto mb-4" size={48}/>
+            <h1 className="text-3xl font-bold text-slate-100">Paiement en vérification</h1>
+            <p className="text-slate-400 mt-2">Le site est fermé. Votre justificatif est en cours de traitement.</p>
+          </div>
+          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-slate-400">Montant déclaré</span>
+              <span className="font-bold text-white">{pendingSettlement.amount.toLocaleString()} FCFA</span>
             </div>
-            <div className="relative z-10">
-              <Clock size={48} className="mx-auto mb-4 opacity-90"/>
-              <h1 className="text-3xl font-serif font-bold mb-2">Fermeture Journalière</h1>
-              <p className="text-orange-100 text-sm">
-                Il est {new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} - 
-                La plateforme est fermée après {config.closingTime}
-              </p>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Réf. Transaction</span>
+              <span className="font-mono text-purple-400">{pendingSettlement.transactionRef}</span>
             </div>
           </div>
+          <button onClick={() => window.location.reload()} className="w-full py-3 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700">Actualiser</button>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="p-8">
-            {pendingSettlement ? (
-              <div className="text-center space-y-6 animate-fade-in">
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-8 rounded-2xl border-2 border-yellow-200 shadow-inner">
-                  <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <RefreshCw className="text-yellow-600 animate-spin" size={36}/>
-                  </div>
-                  <h3 className="font-bold text-yellow-900 text-2xl mb-2">Paiement Envoyé !</h3>
-                  <p className="text-yellow-700 mb-4">
-                    Votre justificatif a été transmis avec succès.
-                  </p>
-                  
-                  <div className="bg-white rounded-xl p-4 mb-4">
-                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">Référence de transaction</p>
-                    <p className="font-mono font-bold text-lg text-gray-800">{pendingSettlement.transactionRef}</p>
-                  </div>
-                  
-                  <div className="bg-yellow-100 rounded-xl p-4 border border-yellow-200">
-                    <div className="flex items-center justify-center gap-2 text-yellow-800 mb-2">
-                      <Clock size={16}/>
-                      <span className="font-bold text-sm">En attente de validation</span>
-                    </div>
-                    <p className="text-xs text-yellow-700">
-                      L'administrateur vérifiera votre paiement. Votre espace se débloquera automatiquement après validation.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-xs text-gray-400 mb-2">Montant déclaré</p>
-                  <p className="text-3xl font-bold text-gray-800">
-                    {(pendingSettlement.amount || 0).toLocaleString()} FCFA
-                  </p>
+  // Cas 2 : BLOQUÉ (Nuit + Dette + Pas de justificatif) [cite: 517, 518]
+  // La condition est stricte : isClosedForNight DOIT être true.
+  if (isClosedForNight && financialStats.platformDebt > 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-900 border-2 border-red-600 p-8 rounded-2xl max-w-3xl w-full shadow-lg">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <Lock className="text-red-500" size={40}/>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">Fin de journée - Paiement requis</h1>
+            <p className="text-slate-400">La boutique est fermée. Veuillez régler la dette de la journée pour débloquer votre espace pour demain.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-xl text-center">
+                <p className="text-sm text-red-300 uppercase font-bold mb-1">Montant à reverser</p>
+                <p className="text-4xl font-bold text-red-500">{financialStats.platformDebt.toLocaleString()} F</p>
+                <p className="text-xs text-red-300/70 mt-2">Marge plateforme + 10% livraisons</p>
+              </div>
+              
+              <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <p className="text-slate-400 text-sm mb-3">Envoyez le montant via Mobile Money au :</p>
+                <div className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-600">
+                  <span className="font-mono text-xl text-white font-bold">{config.phoneNumber}</span>
+                  <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">ADMIN</span>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="text-center bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-2xl border-2 border-red-100">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <Wallet className="text-red-600" size={24}/>
-                    <p className="text-sm font-bold uppercase text-red-600 tracking-wide">Dette à régulariser</p>
-                  </div>
-                  <p className="text-5xl font-bold text-red-700 mb-2">{realTimeDebt.toLocaleString()}</p>
-                  <p className="text-2xl font-bold text-red-600">FCFA</p>
-                </div>
-                
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">
-                      1
-                    </div>
-                    <div>
-                      <p className="font-bold text-blue-900 mb-1">Effectuez le transfert</p>
-                      <p className="text-sm text-blue-700">
-                        Envoyez exactement <strong>{realTimeDebt.toLocaleString()} FCFA</strong> par Mobile Money au numéro :
-                      </p>
-                      <p className="font-mono font-bold text-lg text-blue-900 mt-2 bg-white px-3 py-2 rounded-lg border border-blue-200">
-                        {config.phoneNumber}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-200">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold">
-                      2
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-green-900 mb-3">Saisissez l'ID de transaction</p>
-                      
-                      <form onSubmit={handleEndOfDayPayment} className="space-y-3">
-                        <input 
-                          required
-                          type="text" 
-                          placeholder="Ex: MP240128.1234.A56789"
-                          className="w-full p-4 border-2 border-green-300 rounded-xl text-center font-mono uppercase text-base focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-                          value={transactionId}
-                          onChange={e => setTransactionId(e.target.value)}
-                        />
-                        
-                        <button 
-                          type="submit" 
-                          disabled={isSubmitting}
-                          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader className="animate-spin" size={20}/>
-                              Envoi en cours...
-                            </>
-                          ) : (
-                            <>
-                              <Send size={20}/>
-                              Confirmer le paiement
-                            </>
-                          )}
-                        </button>
-                      </form>
-                    </div>
-                  </div>
+            <div className="flex flex-col justify-center">
+              <form onSubmit={handleEndOfDayPayment} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">Preuve de paiement (ID Transaction)</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={transactionId}
+                    onChange={e => setTransactionId(e.target.value)}
+                    placeholder="Ex: PP230412.1540.B87654"
+                    className="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl text-white font-mono placeholder-slate-500 focus:border-green-500 outline-none"
+                  />
                 </div>
-
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-xl">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="text-orange-600 shrink-0 mt-0.5" size={20}/>
-                    <div className="text-sm text-orange-800">
-                      <p className="font-bold mb-1">Important</p>
-                      <p>Assurez-vous que le montant et le numéro sont corrects. Un justificatif invalide retardera le déblocage de votre compte.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? <Loader className="animate-spin"/> : <Send size={20}/>}
+                  Confirmer le paiement
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // ACCÈS AUTORISÉ
+  // --- LAYOUT NORMAL (ACCÈS AUTORISÉ) ---
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 flex justify-between h-16 items-center">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-r from-brand-brown to-gray-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">
-              FOURNISSEUR
+    <div className="min-h-screen bg-slate-950">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center font-bold text-white">D</div>
+              <div className="hidden sm:block">
+                <h1 className="font-bold text-slate-100">Délices d'Afrique</h1>
+                <p className="text-xs text-purple-400 font-bold">Espace Fournisseur • {supplier.name}</p>
+              </div>
+            </Link>
+
+            <div className="hidden lg:flex items-center gap-4">
+              <div className="bg-green-500/10 px-4 py-2 rounded-xl border border-green-500/20">
+                <p className="text-xs text-green-400 font-bold">Vos Gains: {financialStats.totalSupplierEarnings.toLocaleString()} F</p>
+              </div>
+              {/* Dette affichée en rouge si > 0, pour info en temps réel */}
+              {financialStats.platformDebt > 0 && (
+                <div className="bg-red-500/10 px-4 py-2 rounded-xl border border-red-500/20">
+                  <p className="text-xs text-red-400 font-bold">Dette courante: {financialStats.platformDebt.toLocaleString()} F</p>
+                </div>
+              )}
             </div>
-            <span className="font-bold text-gray-800 truncate text-lg">{supplier.name}</span>
+
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-slate-400">
+              {mobileMenuOpen ? <X/> : <Menu/>}
+            </button>
           </div>
-          
-          {realTimeDebt > 0 && (
-            <div className="hidden sm:flex items-center gap-2 bg-red-50 px-4 py-2 rounded-lg border border-red-200">
-              <AlertTriangle size={16} className="text-red-600"/>
-              <span className="text-sm font-bold text-red-600">
-                Dette: {realTimeDebt.toLocaleString()} F
-              </span>
-            </div>
-          )}
         </div>
-      </nav>
+      </header>
+
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Sidebar Desktop */}
+        <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 fixed h-[calc(100vh-5rem)] top-20 z-40">
+          <div className="flex-1 p-4 space-y-2">
+            {[
+              { path: 'dashboard', icon: Home, label: 'Accueil' },
+              { path: 'products', icon: Package, label: 'Produits' },
+              { path: 'orders', icon: Store, label: 'Commandes' },
+              { path: 'wallet', icon: Wallet, label: 'Finances' },
+              { path: 'infos', icon: BookOpen, label: 'Infos' }
+            ].map(item => (
+              <Link 
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  location.pathname.includes(item.path)
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <item.icon size={20}/>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+          <div className="p-4 border-t border-slate-800">
+            <button 
+              onClick={() => {
+                 if(window.confirm('Se déconnecter ?')) {
+                    sessionStorage.removeItem('supplierAuthenticated');
+                    navigate(`/fournisseur/${supplier.accessSlug}`);
+                 }
+              }} 
+              className="flex items-center gap-3 text-slate-400 hover:text-red-400 px-4 py-3 w-full transition"
+            >
+              <LogOut size={20}/> Déconnexion
+            </button>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <main className="flex-1 md:ml-64 p-4 lg:p-8">
+          <Outlet context={{ supplier, financialStats }} />
+        </main>
+      </div>
       
-      <main className="max-w-6xl mx-auto p-4">
-        <Outlet context={{ supplier, realTimeDebt }} />
-      </main>
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="lg:hidden fixed inset-x-0 top-16 bg-slate-900 border-b border-slate-800 z-40 p-4"
+          >
+             {/* Navigation mobile items here if needed */}
+             <div className="grid gap-2">
+               {/* Mobile links similar to sidebar */}
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

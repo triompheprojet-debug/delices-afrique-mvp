@@ -8,6 +8,10 @@ import {
   Calendar, Gift, Sparkles, CreditCard, Users, Trophy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  PARTNER_LEVELS, WITHDRAWAL_LIMITS, MOBILE_OPERATORS,
+  ORDER_STATUS, PROMO_STATUS, WITHDRAWAL_STATUS
+} from '../../utils/constants';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const PartnerWallet = () => {
@@ -21,7 +25,7 @@ const PartnerWallet = () => {
     amount: '',
     recipientName: '',
     phone: '',
-    operator: 'MTN Money'
+    operator: MOBILE_OPERATORS[0]
   });
   const [submitting, setSubmitting] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
@@ -35,12 +39,8 @@ const PartnerWallet = () => {
     last7DaysEarnings: []
   });
 
-  // ✅ CORRECTION #1: Seuils de retrait par niveau (2000/5000/10000 selon PDF)
-  const WITHDRAWAL_THRESHOLDS = {
-    'Standard': 2000,
-    'Actif': 5000,
-    'Premium': 10000
-  };
+  // ✅ Seuils de retrait par niveau → WITHDRAWAL_LIMITS (constants.js)
+  const WITHDRAWAL_THRESHOLDS = WITHDRAWAL_LIMITS;
 
   useEffect(() => {
     const sessionStr = sessionStorage.getItem('partnerSession');
@@ -71,7 +71,7 @@ const PartnerWallet = () => {
       const q = query(
         collection(db, "withdrawals"),
         where("partnerId", "==", partnerId),
-        orderBy("createdAt", "desc")
+        orderBy("createdAt", "desc") 
       );
       
       const snapshot = await getDocs(q);
@@ -83,7 +83,7 @@ const PartnerWallet = () => {
       setWithdrawals(withdrawalsData);
       
       const pending = withdrawalsData
-        .filter(w => w.status === 'pending')
+        .filter(w => w.status === WITHDRAWAL_STATUS.PENDING)
         .reduce((sum, w) => sum + w.amount, 0);
       
       setStats(prev => ({ ...prev, pendingWithdrawals: pending }));
@@ -98,7 +98,7 @@ const PartnerWallet = () => {
       const q = query(
         collection(db, "orders"),
         where("promo.partnerId", "==", partnerId),
-        where("status", "in", ["Livré", "Terminé"]),
+        where("status", "in", [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED]),
         orderBy("createdAt", "desc")
       );
       
@@ -154,7 +154,7 @@ const PartnerWallet = () => {
     setWithdrawError('');
     
     const amount = Number(withdrawForm.amount);
-    const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || 2000;
+    const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || WITHDRAWAL_LIMITS[PARTNER_LEVELS.STANDARD];
     
     // ✅ Validation avec seuil par niveau
     if (amount < minWithdrawal) {
@@ -182,7 +182,7 @@ const PartnerWallet = () => {
         phone: withdrawForm.phone,
         operator: withdrawForm.operator,
         amount: amount,
-        status: 'pending',
+        status: WITHDRAWAL_STATUS.PENDING,
         transactionRef: null,
         createdAt: serverTimestamp(),
         processedAt: null
@@ -194,7 +194,7 @@ const PartnerWallet = () => {
         amount: '',
         recipientName: '',
         phone: '',
-        operator: 'MTN Money'
+        operator: MOBILE_OPERATORS[0]
       });
       
       loadWithdrawals(partner.id);
@@ -229,7 +229,7 @@ const PartnerWallet = () => {
     );
   }
 
-  const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner?.level] || 2000;
+  const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner?.level] || WITHDRAWAL_LIMITS[PARTNER_LEVELS.STANDARD];
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-8">
@@ -417,11 +417,11 @@ const PartnerWallet = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    withdrawal.status === 'paid' 
+                    withdrawal.status === WITHDRAWAL_STATUS.PAID 
                       ? 'bg-green-500/20' 
                       : 'bg-yellow-500/20'
                   }`}>
-                    {withdrawal.status === 'paid' ? (
+                    {withdrawal.status === WITHDRAWAL_STATUS.PAID ? (
                       <CheckCircle className="text-green-400" size={20} />
                     ) : (
                       <Clock className="text-yellow-400" size={20} />
@@ -439,11 +439,11 @@ const PartnerWallet = () => {
                 </div>
 
                 <div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                  withdrawal.status === 'paid'
+                  withdrawal.status === WITHDRAWAL_STATUS.PAID
                     ? 'bg-green-500/10 text-green-400 border border-green-500/30'
                     : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
                 }`}>
-                  {withdrawal.status === 'paid' ? 'Payé' : 'En attente'}
+                  {withdrawal.status === WITHDRAWAL_STATUS.PAID ? 'Payé' : 'En attente'}
                 </div>
               </div>
             ))}
@@ -552,7 +552,7 @@ const PartnerWallet = () => {
                     Opérateur
                   </label>
                   <div className="grid grid-cols-2 gap-3">
-                    {['MTN Money', 'Airtel Money'].map((op) => (
+                    {MOBILE_OPERATORS.map((op) => (
                       <button
                         key={op}
                         type="button"

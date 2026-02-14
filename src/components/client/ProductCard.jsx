@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Award, Sparkles, CheckCircle } from 'lucide-react';
+import { ShoppingBag, Award, Sparkles, CheckCircle, ChefHat } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,110 +17,95 @@ const ProductCard = ({ product, onClickImage }) => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden h-full flex flex-col hover:border-purple-500/30 hover:shadow-elegant-lg transition-all duration-500"
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="group relative bg-slate-800/40 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-slate-700/40 overflow-hidden flex flex-col hover:border-purple-500/30 hover:shadow-lg transition-all duration-300"
     >
       
-      {/* Badge "Signature" si produit premium */}
-      {product.isSignature && (
-        <motion.div 
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-          className="absolute top-3 left-3 z-20 bg-gradient-to-br from-purple-500 to-pink-500 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5"
-        >
-          <Award size={12} />
-          Premium
-        </motion.div>
-      )}
-
-      {/* IMAGE INTERACTIVE - Responsive optimisé */}
+      {/* IMAGE - Ratio optimisé : Correction ici (aspect-[4/3] au lieu de aspect-square) */}
       <div 
-        className="relative w-full aspect-square sm:aspect-[4/3] overflow-hidden bg-slate-900/50 cursor-zoom-in group/image"
+        className="relative w-full aspect-[4/3] overflow-hidden bg-slate-900/50 cursor-pointer"
         onClick={() => onClickImage && onClickImage(product)}
       >
         {/* Image avec lazy loading */}
         <motion.img 
           whileHover={{ scale: 1.05 }} 
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
           src={product.image} 
           alt={product.name} 
           className="w-full h-full object-cover"
           loading="lazy"
         />
 
-        {/* Overlay gradient au hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-500"></div>
+        {/* Badge Fournisseur - En haut de l'image */}
+        {product.supplierName && (
+          <div className="absolute top-2 left-2 z-20 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+              {product.supplierName.charAt(0)}
+            </div>
+            <span className="text-[10px] sm:text-xs font-bold truncate max-w-[120px]">
+              {product.supplierName}
+            </span>
+          </div>
+        )}
+
+        {/* Badge "Premium" si produit signature */}
+        {product.isSignature && (
+          <div className="absolute top-2 right-2 z-20 bg-gradient-to-br from-purple-500 to-pink-500 text-white px-2 py-1 rounded-lg text-[9px] sm:text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1">
+            <Award size={10} className="sm:w-3 sm:h-3" />
+            <span className="hidden xs:inline">Premium</span>
+          </div>
+        )}
+
+        {/* Overlay gradient au hover - Desktop */}
+        <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-purple-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
         
         {/* Badge "Zoom" au hover - Desktop uniquement */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileHover={{ opacity: 1, scale: 1 }}
-          className="hidden sm:flex absolute bottom-3 right-3 bg-slate-800/90 backdrop-blur-sm text-slate-200 px-3 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover/image:opacity-100 transition-all duration-300 items-center gap-1.5"
-        >
-          <Sparkles size={12} />
+        <div className="hidden lg:flex absolute bottom-2 right-2 bg-slate-800/80 backdrop-blur-sm text-slate-200 px-2 py-1 rounded-lg text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 items-center gap-1">
+          <Sparkles size={10} />
           Agrandir
-        </motion.div>
+        </div>
 
         {/* Overlay si épuisé */}
         {!product.inStock && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-10"
-          >
-            <div className="bg-slate-700 text-slate-200 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="bg-slate-700 text-slate-200 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-lg">
               Épuisé
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
-      {/* CONTENU - Optimisé mobile */}
-      <div className="p-4 sm:p-5 flex flex-col flex-1">
+      {/* CONTENU - Ultra compact, zéro espaces vides */}
+      <div className="p-2.5 sm:p-3 flex flex-col">
         
-        {/* En-tête : Catégorie uniquement */}
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">
-            {product.category}
-          </span>
-        </div>
-
         {/* Nom du produit */}
-        <h3 className="font-serif font-bold text-lg sm:text-xl text-slate-100 mb-2 leading-tight line-clamp-2 group-hover:text-purple-300 transition-colors duration-300">
+        <h3 className="font-serif font-bold text-sm sm:text-base lg:text-lg text-slate-100 leading-tight line-clamp-2 group-hover:text-purple-300 transition-colors duration-300 mb-1.5 sm:mb-2">
           {product.name}
         </h3>
 
-        {/* Description - Masquée sur mobile, visible sur desktop */}
-        <p className="hidden sm:block text-slate-400 text-sm line-clamp-2 mb-4 leading-relaxed">
-          {product.description || 'Délicieuse création artisanale préparée avec passion.'}
-        </p>
+        {/* Catégorie */}
+        <span className="text-[9px] sm:text-[10px] font-bold text-purple-400/70 uppercase tracking-widest mb-2">
+          {product.category}
+        </span>
 
-        {/* Fournisseur - Desktop uniquement */}
-        {product.supplierName && (
-          <div className="hidden sm:flex items-center gap-2 mb-4 pb-4 border-b border-slate-700/50">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-              {product.supplierName.charAt(0)}
-            </div>
-            <span className="text-xs text-slate-400 font-medium">
-              Par <span className="text-purple-400 font-bold">{product.supplierName}</span>
-            </span>
-          </div>
+        {/* Description - Desktop uniquement */}
+        {product.description && (
+          <p className="hidden lg:block text-slate-400 text-xs line-clamp-2 leading-relaxed mb-2">
+            {product.description}
+          </p>
         )}
         
-        {/* Prix + Bouton CTA - Layout responsive */}
-        <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4 gap-3">
+        {/* Prix + Bouton */}
+        <div className="flex items-center justify-between gap-2">
           
           {/* Prix */}
-          <div className="flex flex-col">
-            <span className="text-xl sm:text-2xl font-bold text-slate-100">
-              {product.price.toLocaleString()}
-              <span className="text-xs text-slate-400 font-normal ml-1">F</span>
-            </span>
-          </div>
+          <span className="text-base sm:text-lg lg:text-xl font-bold text-slate-100">
+            {product.price.toLocaleString()}
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal ml-0.5">F</span>
+          </span>
           
           {/* Bouton Ajouter au Panier */}
           <AnimatePresence mode="wait">
@@ -130,9 +115,9 @@ const ProductCard = ({ product, onClickImage }) => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1, rotate: [0, -10, 10, -10, 0] }}
                 exit={{ scale: 0 }}
-                className="bg-green-500 text-white p-3 rounded-xl shadow-lg flex items-center justify-center"
+                className="bg-green-500 text-white p-2 sm:p-2.5 lg:p-3 rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center"
               >
-                <CheckCircle size={20} />
+                <CheckCircle size={18} className="sm:w-5 sm:h-5" />
               </motion.div>
             ) : (
               <motion.button
@@ -141,14 +126,12 @@ const ProductCard = ({ product, onClickImage }) => {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
                 whileTap={{ scale: 0.9 }} 
-                whileHover={{ 
-                  scale: 1.05,
-                  boxShadow: "0 10px 30px rgba(139, 92, 246, 0.4)"
-                }}
+                whileHover={{ scale: 1.05 }}
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
                 className={`
-                  relative overflow-hidden p-3 rounded-xl shadow-lg flex items-center gap-2 font-bold text-sm
+                  relative overflow-hidden p-2 sm:p-2.5 lg:p-3 rounded-lg sm:rounded-xl shadow-lg 
+                  flex items-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm
                   transition-all duration-300 flex-shrink-0
                   ${product.inStock 
                     ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700' 
@@ -156,25 +139,22 @@ const ProductCard = ({ product, onClickImage }) => {
                   }
                 `}
               >
-                {/* Effet de brillance au hover */}
                 {product.inStock && (
                   <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    className="hidden lg:block absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                     animate={{ x: ['-100%', '100%'] }}
                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                   />
                 )}
-                <ShoppingBag size={18} className="relative z-10" />
-                {/* Texte uniquement sur desktop */}
-                <span className="hidden sm:inline relative z-10">Ajouter</span>
+                <ShoppingBag size={16} className="relative z-10 sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden lg:inline relative z-10">Ajouter</span>
               </motion.button>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Effet de halo au hover - Subtil */}
-      <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
+      <div className="hidden sm:block absolute -inset-0.5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
     </motion.div>
   );
 };

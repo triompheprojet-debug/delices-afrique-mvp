@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { APP_CONFIG, LEVEL_RULES, PARTNER_LEVELS } from '../utils/constants';
 import { db } from '../firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -14,18 +15,18 @@ export const ConfigProvider = ({ children }) => {
 
   // Configuration par défaut
   const [config, setConfig] = useState({
-    openingTime: '08:00',
-    closingTime: '22:00', // Valeur par défaut
+    openingTime: APP_CONFIG.DEFAULT_OPENING,
+    closingTime: APP_CONFIG.DEFAULT_CLOSING,
     isShopOpen: true,
-    phoneNumber: '+242 06 000 0000',
-    deliveryRatePerKm: 500,
+    phoneNumber: APP_CONFIG.CONTACT_PHONE,
+    deliveryRatePerKm: APP_CONFIG.DEFAULT_DELIVERY_RATE,
     partnerRules: {
-        baseMargin: 1000, // ✅ Marge de base protégée (1000 FCFA)
-        surplusSplit: { platform: 0.50, partner: 0.30, client: 0.20 }, // ✅ Répartition 50/30/20
+        baseMargin: APP_CONFIG.BASE_MARGIN, // ✅ Marge de base protégée (cf. APP_CONFIG)
+        surplusSplit: APP_CONFIG.SURPLUS_SPLIT, // ✅ Répartition (cf. APP_CONFIG.SURPLUS_SPLIT)
         levels: {
-            standard: { minSales: 0, baseComm: 150, baseDisc: 150 },
-            active: { minSales: 30, baseComm: 250, baseDisc: 200 },
-            premium: { minSales: 150, baseComm: 300, baseDisc: 200 }
+            standard: LEVEL_RULES[PARTNER_LEVELS.STANDARD],
+            active:   LEVEL_RULES[PARTNER_LEVELS.ACTIF],
+            premium:  LEVEL_RULES[PARTNER_LEVELS.PREMIUM]
         }
     }
   });
@@ -94,14 +95,14 @@ export const ConfigProvider = ({ children }) => {
     const sellingPrice = Number(productPrice) || 0;
 
     // ✅ Récupération des paliers
-    const standard = levels.standard || { minSales: 0, baseComm: 0, baseDisc: 0 };
-    const active = levels.active || { minSales: 30 };
-    const premium = levels.premium || { minSales: 150 };
+    const standard = levels.standard || LEVEL_RULES[PARTNER_LEVELS.STANDARD];
+    const active = levels.active   || LEVEL_RULES[PARTNER_LEVELS.ACTIF];
+    const premium = levels.premium || LEVEL_RULES[PARTNER_LEVELS.PREMIUM];
 
     // ✅ Détermination du niveau du partenaire
     let level = standard;
-    if (totalSalesOfPartner >= premium.minSales) level = premium;
-    else if (totalSalesOfPartner >= active.minSales) level = active;
+    if (totalSalesOfPartner >= LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales) level = premium;
+    else if (totalSalesOfPartner >= LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales) level = active;
 
     // ✅ Commission et réduction DE BASE (selon niveau)
     let comm = level.baseComm || 0;
@@ -109,13 +110,13 @@ export const ConfigProvider = ({ children }) => {
 
     // ✅ CALCUL DU SURPLUS (Marge réelle - Marge de base protégée)
     const margin = sellingPrice - buyingPrice;
-    const baseMargin = rules.baseMargin || 1000;
+    const baseMargin = rules.baseMargin || APP_CONFIG.BASE_MARGIN;
     const surplus = margin - baseMargin;
 
     // ✅ SI SURPLUS > 0 : Redistribution selon 50/30/20
     if (surplus > 0 && rules.surplusSplit) {
-      const partnerBonus = Math.round(surplus * (rules.surplusSplit.partner || 0)); // +30% du surplus
-      const clientBonus = Math.round(surplus * (rules.surplusSplit.client || 0));   // +20% du surplus
+      const partnerBonus = Math.round(surplus * (rules.surplusSplit.partner || APP_CONFIG.SURPLUS_SPLIT.PARTNER)); // cf. APP_CONFIG
+      const clientBonus = Math.round(surplus * (rules.surplusSplit.client  || APP_CONFIG.SURPLUS_SPLIT.CLIENT));  // cf. APP_CONFIG
       
       comm += partnerBonus; // Commission totale = base + bonus
       disc += clientBonus;  // Réduction totale = base + bonus

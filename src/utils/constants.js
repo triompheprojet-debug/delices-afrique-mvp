@@ -1,65 +1,115 @@
 // src/utils/constants.js
 
-// ==========================================
-// 🏆 NIVEAUX PARTENAIRES & RÈGLES MÉTIER
-// ==========================================
+// =============================================================================
+// 🏆 1. NIVEAUX PARTENAIRES & RÈGLES MÉTIER
+// =============================================================================
+
 export const PARTNER_LEVELS = {
   STANDARD: 'Standard',
   ACTIF: 'Actif',
   PREMIUM: 'Premium',
 };
 
+// Configuration détaillée des paliers
 export const LEVEL_RULES = {
   [PARTNER_LEVELS.STANDARD]: {
     minSales: 0,
-    commission: 150,
-    discount: 150,
+    baseComm: 150,    // Commission de base (FCFA)
+    baseDisc: 150,    // Réduction client de base (FCFA)
     withdrawalMin: 2000,
     nextLevel: PARTNER_LEVELS.ACTIF,
-    target: 30,
-    // ✅ NOUVEAU : Ajout des couleurs pour l'UI (utilisé dans Dashboard)
-    uiColor: 'amber', 
-    icon: 'Star'
+    target: 30,       // Objectif pour passer au niveau suivant
   },
   [PARTNER_LEVELS.ACTIF]: {
     minSales: 30,
-    commission: 250,
-    discount: 200,
+    baseComm: 250,
+    baseDisc: 200,
     withdrawalMin: 5000,
     nextLevel: PARTNER_LEVELS.PREMIUM,
     target: 150,
-    uiColor: 'slate',
-    icon: 'Award'
   },
   [PARTNER_LEVELS.PREMIUM]: {
     minSales: 150,
-    commission: 300,
-    discount: 200,
+    baseComm: 300,
+    baseDisc: 200,
     withdrawalMin: 10000,
-    nextLevel: 'Max',
+    nextLevel: 'Max', // Niveau maximum atteint
     target: null,
-    uiColor: 'yellow',
-    icon: 'Trophy'
   },
 };
 
-// ==========================================
-// 📦 STATUTS DES COMMANDES (Database Values)
-// ==========================================
+// Seuils de retrait simplifiés (pour PartnerWallet.jsx)
+export const WITHDRAWAL_LIMITS = {
+  [PARTNER_LEVELS.STANDARD]: 2000,
+  [PARTNER_LEVELS.ACTIF]: 5000,
+  [PARTNER_LEVELS.PREMIUM]: 10000,
+};
+
+// =============================================================================
+// 🎨 2. UI & DESIGN SYSTEM (BADGES, COULEURS, ICÔNES)
+// =============================================================================
+
+// Styles visuels des niveaux (pour PartnerDashboard.jsx)
+export const LEVEL_UI = {
+  [PARTNER_LEVELS.STANDARD]: {
+    color: 'from-amber-900 to-amber-700',
+    textColor: 'text-amber-700',
+    bgColor: 'bg-amber-700/10',
+    borderColor: 'border-amber-700/30',
+    iconName: 'Star'
+  },
+  [PARTNER_LEVELS.ACTIF]: {
+    color: 'from-gray-300 to-gray-500',
+    textColor: 'text-slate-400',
+    bgColor: 'bg-slate-400/10',
+    borderColor: 'border-slate-400/30',
+    iconName: 'Award'
+  },
+  [PARTNER_LEVELS.PREMIUM]: {
+    color: 'from-amber-400 to-yellow-600',
+    textColor: 'text-yellow-400',
+    bgColor: 'bg-yellow-400/10',
+    borderColor: 'border-yellow-400/30',
+    iconName: 'Trophy'
+  }
+};
+
+// Couleurs des statuts de commande (pour Orders.jsx)
+export const STATUS_STYLES = {
+  'En attente': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  'En préparation': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  // 'En livraison' supprimé
+  'Livré': 'bg-green-500/20 text-green-400 border-green-500/30',
+  'Terminé': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  'Annulé': 'bg-red-500/20 text-red-400 border-red-500/30'
+};
+
+// =============================================================================
+// 📦 3. STATUTS DES COMMANDES (DATABASE)
+// =============================================================================
+
 export const ORDER_STATUS = {
   PENDING: 'En attente',
-  CONFIRMED: 'Confirmé',
-  PREPARING: 'En préparation', // ✅ NOUVEAU (Manquait dans Orders.jsx)
-  SHIPPING: 'En livraison',    // ✅ NOUVEAU (Manquait dans Orders.jsx)
+  PREPARING: 'En préparation',
+  SHIPPING: 'En livraison', 
   DELIVERED: 'Livré',
-  COMPLETED: 'Terminé',
+  COMPLETED: 'Terminé',       // Déclenche le paiement commission
   CANCELLED: 'Annulé',
 };
 
-// ==========================================
-// 💳 MODES DE PAIEMENT & LIVRAISON
-// ==========================================
-// ✅ NOUVEAU SECTION COMPLÈTE
+// Ordre logique pour l'avancement des commandes
+export const ORDER_STATUS_FLOW = [
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.PREPARING,
+  ORDER_STATUS.SHIPPING,
+  ORDER_STATUS.DELIVERED,
+  ORDER_STATUS.COMPLETED
+];
+
+// =============================================================================
+// 💰 4. FINANCE & PAIEMENTS
+// =============================================================================
+
 export const PAYMENT_METHODS = {
   CASH: 'Espèces',
   MOBILE_MONEY: 'Mobile Money',
@@ -70,13 +120,10 @@ export const DELIVERY_METHODS = {
   PICKUP: 'Retrait',
 };
 
-// ==========================================
-// 💰 STATUTS DES COMMISSIONS & PAIEMENTS
-// ==========================================
 export const PROMO_STATUS = {
-  PENDING: 'pending',
-  VALIDATED: 'validated',
-  PAID: 'paid',
+  PENDING: 'pending',     // En attente de validation commande
+  VALIDATED: 'validated', // Validé (crédité dans wallet)
+  PAID: 'paid',           // Retiré (cash out)
 };
 
 export const WITHDRAWAL_STATUS = {
@@ -85,23 +132,86 @@ export const WITHDRAWAL_STATUS = {
   REJECTED: 'rejected',
 };
 
-// ==========================================
-// ⚙️ CONFIGURATION GLOBALE
-// ==========================================
-export const APP_CONFIG = {
-  BASE_MARGIN: 1000,
-  SURPLUS_SPLIT: {
-    PLATFORM: 0.50,
-    PARTNER: 0.30,
-    CLIENT: 0.20,
+// Opérateurs Mobile Money supportés
+export const MOBILE_OPERATORS = ['MTN Money', 'Airtel Money'];
+
+// =============================================================================
+// 🛡️ 5. LIMITES & VALIDATIONS (NOUVEAU)
+// =============================================================================
+
+export const VALIDATION_RULES = {
+  PHONE: {
+    REGEX: /^(06|05|04)\d{7}$/, // Format local Congo (06... 05... 04...)
+    LENGTH: 9,
+    ERROR_MSG: "Numéro invalide (doit commencer par 06, 05 ou 04 et contenir 9 chiffres)"
   },
-  OPERATORS: ['MTN Money', 'Airtel Money'],
+  PROMO_CODE: {
+    LENGTH: 10,
+    REGEX: /^[A-Z0-9-]{10}$/, // Seulement majuscules et chiffres
+    ERROR_MSG: "Le code promo doit contenir 6 caractères alphanumériques"
+  },
+  WITHDRAWAL: {
+    MIN_AMOUNT: 2000, // Seuil plancher absolu
+    MAX_AMOUNT: 500000, // Plafond sécurité par transaction
+  },
+  ORDER: {
+    MAX_ITEMS: 50, // Anti-spam panier
+  }
+};
+
+// =============================================================================
+// 📊 6. FILTRES & TRIS (DASHBOARDS)
+// =============================================================================
+
+export const SALES_FILTERS = {
+  STATUS: {
+    ALL: 'all',
+    VALIDATED: 'validated',
+    PENDING: 'pending',
+    CANCELLED: 'cancelled' 
+  },
+  DATE: {
+    ALL: 'all',
+    TODAY: 'today',
+    WEEK: 'week',
+    MONTH: 'month'
+  },
+  SORT: {
+    RECENT: 'recent',
+    AMOUNT: 'amount',
+    COMMISSION: 'commission'
+  }
+};
+
+// Onglets Admin (Partners.jsx)
+export const ADMIN_TABS = {
+  OVERVIEW: 'overview',
+  PARTNERS: 'partners',
+  PAYOUTS: 'payouts',
+  CODES: 'codes',
+  RULES: 'rules'
+};
+
+// =============================================================================
+// ⚙️ 7. CONFIGURATION GLOBALE PAR DÉFAUT
+// =============================================================================
+
+export const APP_CONFIG = {
+  // Marges et répartition
+  BASE_MARGIN: 1000, // FCFA (Marge protégée créateur)
+  SURPLUS_SPLIT: {
+    PLATFORM: 0.50, // 50%
+    PARTNER: 0.30,  // 30%
+    CLIENT: 0.20,   // 20%
+  },
   
-  // ✅ NOUVEAU : Valeurs par défaut (utilisées dans Settings/Checkout)
-  DEFAULT_DELIVERY_RATE: 500,
-  BAKERY_LOCATION: { lat: -4.793, lng: 11.853 }, // Mis à jour selon Settings.jsx
+  // Infos Boutique
+  BAKERY_LOCATION: { lat: -4.793, lng: 11.853 }, // Pointe-Noire
+  DEFAULT_ADDRESS: 'Centre Ville, Pointe-Noire',
+  CONTACT_PHONE: '+242 06 000 0000',
+  
+  // Horaires & Logistique
   DEFAULT_OPENING: '08:00',
   DEFAULT_CLOSING: '22:00',
-  CONTACT_PHONE: '+242 06 000 0000',
-  DEFAULT_ADDRESS: 'Centre Ville, Pointe-Noire'
+  DEFAULT_DELIVERY_RATE: 500, // FCFA par Km
 };

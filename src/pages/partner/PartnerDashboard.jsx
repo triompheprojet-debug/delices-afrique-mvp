@@ -8,6 +8,10 @@ import {
   Clock, Sparkles, Trophy, ArrowUp, ArrowDown, Minus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  PARTNER_LEVELS, LEVEL_RULES, LEVEL_UI,
+  WITHDRAWAL_LIMITS, ORDER_STATUS
+} from '../../utils/constants';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const PartnerDashboard = () => {
@@ -24,11 +28,8 @@ const PartnerDashboard = () => {
     topProducts: []
   });
 
-  const WITHDRAWAL_THRESHOLDS = {
-    'Standard': 2000,
-    'Actif': 5000,
-    'Premium': 10000
-  };
+  // ✅ Seuils de retrait → WITHDRAWAL_LIMITS (constants.js)
+  const WITHDRAWAL_THRESHOLDS = WITHDRAWAL_LIMITS;
 
   // ✅ Récupération des données partenaire en temps réel
   useEffect(() => {
@@ -79,7 +80,7 @@ const PartnerDashboard = () => {
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // ✅ CORRECTION : Filtrer les commandes "Livré" et "Terminé" (selon ta base de données)
-    const deliveredOrders = orders.filter(o => o.status === 'Livré' || o.status === 'Terminé');
+    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED);
 
     // ✅ Gains aujourd'hui
     const todayEarnings = deliveredOrders
@@ -141,7 +142,7 @@ const PartnerDashboard = () => {
 
   const generateChartData = (orders) => {
     // ✅ Filtrer uniquement les commandes validées
-    const deliveredOrders = orders.filter(o => o.status === 'Livré' || o.status === 'Terminé');
+    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED);
     
     const last30Days = Array.from({ length: 30 }, (_, i) => {
       const date = new Date();
@@ -178,37 +179,38 @@ const PartnerDashboard = () => {
     }
   };
 
+  // ✅ getLevelDetails() — s'appuie sur LEVEL_UI + LEVEL_RULES + PARTNER_LEVELS (constants.js)
   const getLevelDetails = (sales = 0) => {
-    if (sales >= 150) return { 
-      name: 'Premium', 
-      color: 'from-amber-400 to-yellow-600', 
-      textColor: 'text-yellow-400',
-      bgColor: 'bg-yellow-400/10',
-      borderColor: 'border-yellow-400/30',
-      next: 'Max', 
-      nextTarget: 0, 
-      currentTarget: 150,
-      icon: Trophy
-    };
-    if (sales >= 30) return { 
-      name: 'Actif', 
-      color: 'from-gray-300 to-gray-500', 
-      textColor: 'text-slate-400',
-      bgColor: 'bg-slate-400/10',
-      borderColor: 'border-slate-400/30',
-      next: 'Premium', 
-      nextTarget: 150, 
-      currentTarget: 30,
-      icon: Award
-    };
+    if (sales >= LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales) {
+      const ui = LEVEL_UI[PARTNER_LEVELS.PREMIUM];
+      return { 
+        name: PARTNER_LEVELS.PREMIUM,
+        color: ui.color, textColor: ui.textColor,
+        bgColor: ui.bgColor, borderColor: ui.borderColor,
+        next: 'Max', nextTarget: 0,
+        currentTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales,
+        icon: Trophy
+      };
+    }
+    if (sales >= LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales) {
+      const ui = LEVEL_UI[PARTNER_LEVELS.ACTIF];
+      return { 
+        name: PARTNER_LEVELS.ACTIF,
+        color: ui.color, textColor: ui.textColor,
+        bgColor: ui.bgColor, borderColor: ui.borderColor,
+        next: PARTNER_LEVELS.PREMIUM,
+        nextTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales,
+        currentTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales,
+        icon: Award
+      };
+    }
+    const ui = LEVEL_UI[PARTNER_LEVELS.STANDARD];
     return { 
-      name: 'Standard', 
-      color: 'from-amber-900 to-amber-700', 
-      textColor: 'text-amber-700',
-      bgColor: 'bg-amber-700/10',
-      borderColor: 'border-amber-700/30',
-      next: 'Actif', 
-      nextTarget: 30, 
+      name: PARTNER_LEVELS.STANDARD,
+      color: ui.color, textColor: ui.textColor,
+      bgColor: ui.bgColor, borderColor: ui.borderColor,
+      next: PARTNER_LEVELS.ACTIF,
+      nextTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales,
       currentTarget: 0,
       icon: Star
     };
@@ -228,8 +230,8 @@ const PartnerDashboard = () => {
   if (!partner) return null;
 
   const level = getLevelDetails(partner.totalSales);
-  const progressPercent = level.name === 'Premium' ? 100 : ((partner.totalSales - level.currentTarget) / (level.nextTarget - level.currentTarget)) * 100;
-  const salesRemaining = level.name === 'Premium' ? 0 : level.nextTarget - partner.totalSales;
+  const progressPercent = level.name === PARTNER_LEVELS.PREMIUM ? 100 : ((partner.totalSales - level.currentTarget) / (level.nextTarget - level.currentTarget)) * 100;
+  const salesRemaining = level.name === PARTNER_LEVELS.PREMIUM ? 0 : level.nextTarget - partner.totalSales;
   const earningsChange = stats.weekEarnings > 0 ? ((stats.todayEarnings / (stats.weekEarnings / 7)) - 1) * 100 : 0;
   const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || 2000;
 
@@ -264,7 +266,7 @@ const PartnerDashboard = () => {
           </div>
 
           {/* Barre de progression (si pas Premium) */}
-          {level.name !== 'Premium' && (
+          {level.name !== PARTNER_LEVELS.PREMIUM && (
             <div className="bg-slate-950/50 backdrop-blur-md border border-slate-800 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">

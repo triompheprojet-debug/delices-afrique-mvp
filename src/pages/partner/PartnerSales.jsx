@@ -9,6 +9,7 @@ import {
   X, User, CreditCard, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ORDER_STATUS, PROMO_STATUS, DELIVERY_METHODS, SALES_FILTERS } from '../../utils/constants';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -41,17 +42,17 @@ const formatTime = (ts) => {
 
 // ─── RÈGLE MÉTIER : couleur de la commission selon statut de la commande ────
 // • Gris  → commande pas encore "Terminé" ni "Annulé"
-// • Vert  → commande "Terminé" (promo.status === 'validated' → walletBalance crédité)
+// • Vert  → commande "Terminé" (promo.status === PROMO_STATUS.VALIDATED → walletBalance crédité)
 // • Rouge → commande "Annulé"
 const getCommStyle = (sale) => {
-  if (sale.status === 'Annulé') {
+  if (sale.status === ORDER_STATUS.CANCELLED) {
     return {
       text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20',
       badge: 'bg-red-500/15 border-red-500/30 text-red-400',
       dot: 'bg-red-400', label: 'Annulé', icon: XCircle, paid: false
     };
   }
-  if (sale.status === 'Terminé' || sale.promo?.status === 'validated') {
+  if (sale.status === ORDER_STATUS.COMPLETED || sale.promo?.status === PROMO_STATUS.VALIDATED) {
     return {
       text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
       badge: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
@@ -122,7 +123,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
                   { icon: Calendar, label: 'Date', val: formatDateShort(sale.createdAt) },
                   { icon: User, label: 'Client', val: sale.customer?.name || '—' },
                   {
-                    icon: sale.details?.method === 'Livraison' ? Truck : Package,
+                    icon: sale.details?.method === DELIVERY_METHODS.DELIVERY ? Truck : Package,
                     label: 'Réception', val: sale.details?.method || '—'
                   },
                   { icon: CreditCard, label: 'Paiement', val: sale.details?.paymentMethod || '—' }
@@ -192,7 +193,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
 
                 {/* Commission — couleur contextuelle (règle métier) */}
                 <div className={`flex justify-between items-center pt-3 mt-1 border-t-2 border-dashed ${
-                  sale.status === 'Annulé' ? 'border-red-500/30'
+                  sale.status === ORDER_STATUS.CANCELLED ? 'border-red-500/30'
                   : cs.paid ? 'border-emerald-500/30' : 'border-slate-700/40'
                 }`}>
                   <span className={`font-bold text-sm flex items-center gap-1.5 ${cs.text}`}>
@@ -211,14 +212,14 @@ const SaleDetailModal = ({ sale, onClose }) => {
                 <Icon size={15} className={`${cs.text} flex-shrink-0 mt-0.5`}/>
                 <div>
                   <p className={`text-sm font-bold ${cs.text} mb-1`}>
-                    {sale.status === 'Annulé'
+                    {sale.status === ORDER_STATUS.CANCELLED
                       ? 'Commande annulée'
                       : cs.paid ? 'Commission confirmée et créditée'
                       : `Statut actuel : ${sale.status || 'En attente'}`
                     }
                   </p>
                   <p className="text-xs text-slate-500">
-                    {sale.status === 'Annulé'
+                    {sale.status === ORDER_STATUS.CANCELLED
                       ? 'Aucune commission ne sera versée pour cette commande.'
                       : cs.paid
                         ? `Créditée le ${sale.promo?.paidAt ? formatDateShort(sale.promo.paidAt) : '—'}. Visible dans votre portefeuille.`
@@ -327,9 +328,9 @@ const PartnerSales = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [dateRange, setDateRange] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
+  const [statusFilter, setStatusFilter] = useState(SALES_FILTERS.STATUS.ALL);
+  const [dateRange, setDateRange] = useState(SALES_FILTERS.DATE.ALL);
+  const [sortBy, setSortBy] = useState(SALES_FILTERS.SORT.RECENT);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
 
@@ -369,19 +370,19 @@ const PartnerSales = () => {
 
       // ✅ FIX BUG-6 : Éviter le double comptage - prioriser status 'Annulé'
       // Logique : Une commande annulée reste annulée même si promo.status = 'validated'
-      const cancelled = data.filter(s => s.status === 'Annulé').length;
+      const cancelled = data.filter(s => s.status === ORDER_STATUS.CANCELLED).length;
       const validated = data.filter(s => 
-        s.status !== 'Annulé' && // ✅ Exclure les annulées du comptage validé
-        (s.status === 'Terminé' || s.promo?.status === 'validated')
+        s.status !== ORDER_STATUS.CANCELLED && // ✅ Exclure les annulées du comptage validé
+        (s.status === ORDER_STATUS.COMPLETED || s.promo?.status === PROMO_STATUS.VALIDATED)
       ).length;
       const pending = data.length - validated - cancelled;
 
       const totalCommission = data
-        .filter(s => s.status !== 'Annulé' && (s.status === 'Terminé' || s.promo?.status === 'validated'))
+        .filter(s => s.status !== ORDER_STATUS.CANCELLED && (s.status === ORDER_STATUS.COMPLETED || s.promo?.status === PROMO_STATUS.VALIDATED))
         .reduce((sum, s) => sum + (s.promo?.partnerCommission || 0), 0);
 
       const pendingCommission = data
-        .filter(s => s.status !== 'Annulé' && s.status !== 'Terminé' && s.promo?.status !== 'validated')
+        .filter(s => s.status !== ORDER_STATUS.CANCELLED && s.status !== ORDER_STATUS.COMPLETED && s.promo?.status !== PROMO_STATUS.VALIDATED)
         .reduce((sum, s) => sum + (s.promo?.partnerCommission || 0), 0);
 
       setStats({
@@ -407,20 +408,20 @@ const PartnerSales = () => {
   const filteredSales = (() => {
     let list = [...sales];
 
-    if (statusFilter === 'validated')
-      list = list.filter(s => s.status === 'Terminé' || s.promo?.status === 'validated');
-    else if (statusFilter === 'pending')
-      list = list.filter(s => s.status !== 'Annulé' && s.status !== 'Terminé' && s.promo?.status !== 'validated');
-    else if (statusFilter === 'cancelled')
-      list = list.filter(s => s.status === 'Annulé');
+    if (statusFilter === SALES_FILTERS.STATUS.VALIDATED)
+      list = list.filter(s => s.status === ORDER_STATUS.COMPLETED || s.promo?.status === PROMO_STATUS.VALIDATED);
+    else if (statusFilter === SALES_FILTERS.STATUS.PENDING)
+      list = list.filter(s => s.status !== ORDER_STATUS.CANCELLED && s.status !== ORDER_STATUS.COMPLETED && s.promo?.status !== PROMO_STATUS.VALIDATED);
+    else if (statusFilter === SALES_FILTERS.STATUS.CANCELLED)
+      list = list.filter(s => s.status === ORDER_STATUS.CANCELLED);
 
-    if (dateRange !== 'all') {
+    if (dateRange !== SALES_FILTERS.DATE.ALL) {
       const today = new Date(); today.setHours(0,0,0,0);
       list = list.filter(s => {
         const d = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt?.seconds * 1000);
-        if (dateRange === 'today') return d >= today;
-        if (dateRange === 'week') return d >= new Date(today.getTime() - 7 * 864e5);
-        if (dateRange === 'month') return d >= new Date(today.getTime() - 30 * 864e5);
+        if (dateRange === SALES_FILTERS.DATE.TODAY) return d >= today;
+        if (dateRange === SALES_FILTERS.DATE.WEEK) return d >= new Date(today.getTime() - 7 * 864e5);
+        if (dateRange === SALES_FILTERS.DATE.MONTH) return d >= new Date(today.getTime() - 30 * 864e5);
         return true;
       });
     }
@@ -433,8 +434,8 @@ const PartnerSales = () => {
       );
     }
 
-    if (sortBy === 'amount') list.sort((a, b) => (b.details?.subTotal || 0) - (a.details?.subTotal || 0));
-    else if (sortBy === 'commission') list.sort((a, b) => (b.promo?.partnerCommission || 0) - (a.promo?.partnerCommission || 0));
+    if (sortBy === SALES_FILTERS.SORT.AMOUNT) list.sort((a, b) => (b.details?.subTotal || 0) - (a.details?.subTotal || 0));
+    else if (sortBy === SALES_FILTERS.SORT.COMMISSION) list.sort((a, b) => (b.promo?.partnerCommission || 0) - (a.promo?.partnerCommission || 0));
 
     return list;
   })();
@@ -448,8 +449,8 @@ const PartnerSales = () => {
       s.details?.subTotal || 0,
       s.details?.discount || s.promo?.discountAmount || 0,
       s.promo?.partnerCommission || 0,
-      s.status === 'Annulé' ? 'Annulé'
-        : (s.status === 'Terminé' || s.promo?.status === 'validated') ? 'Payé' : 'En attente'
+      s.status === ORDER_STATUS.CANCELLED ? 'Annulé'
+        : (s.status === ORDER_STATUS.COMPLETED || s.promo?.status === PROMO_STATUS.VALIDATED) ? 'Payé' : 'En attente'
     ]);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const a = document.createElement('a');
@@ -576,14 +577,14 @@ const PartnerSales = () => {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-3 rounded-xl border font-medium text-sm transition-all ${
-              showFilters || statusFilter !== 'all' || dateRange !== 'all'
+              showFilters || statusFilter !== SALES_FILTERS.STATUS.ALL || dateRange !== SALES_FILTERS.DATE.ALL
                 ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
             }`}
           >
             <Filter size={14}/>
             <span className="hidden sm:inline">Filtres</span>
-            {(statusFilter !== 'all' || dateRange !== 'all') && (
+            {(statusFilter !== SALES_FILTERS.STATUS.ALL || dateRange !== SALES_FILTERS.DATE.ALL) && (
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
             )}
           </button>
@@ -611,10 +612,10 @@ const PartnerSales = () => {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-purple-500/50"
                   >
-                    <option value="all">Toutes les commandes</option>
-                    <option value="validated">✓ Commission payée</option>
-                    <option value="pending">⏳ En attente de paiement</option>
-                    <option value="cancelled">✕ Annulées</option>
+                    <option value={SALES_FILTERS.STATUS.ALL}>Toutes les commandes</option>
+                    <option value={PROMO_STATUS.VALIDATED}>✓ Commission payée</option>
+                    <option value={PROMO_STATUS.PENDING}>⏳ En attente de paiement</option>
+                    <option value={PROMO_STATUS.CANCELLED}>✕ Annulées</option>
                   </select>
                 </div>
                 <div>
@@ -652,9 +653,9 @@ const PartnerSales = () => {
             <span className="font-bold text-slate-400">{filteredSales.length}</span>{' '}
             résultat{filteredSales.length !== 1 ? 's' : ''}
           </p>
-          {(searchTerm || statusFilter !== 'all' || dateRange !== 'all') && (
+          {(searchTerm || statusFilter !== SALES_FILTERS.STATUS.ALL || dateRange !== SALES_FILTERS.DATE.ALL) && (
             <button
-              onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDateRange('all'); }}
+              onClick={() => { setSearchTerm(''); setStatusFilter(SALES_FILTERS.STATUS.ALL); setDateRange(SALES_FILTERS.DATE.ALL); }}
               className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
             >
               <X size={12}/>Réinitialiser
@@ -686,7 +687,7 @@ const PartnerSales = () => {
               <Activity className="text-slate-700 mx-auto mb-4" size={48}/>
               <h3 className="text-lg font-bold text-slate-400 mb-2">Aucune vente trouvée</h3>
               <p className="text-slate-600 text-sm">
-                {searchTerm || statusFilter !== 'all' || dateRange !== 'all'
+                {searchTerm || statusFilter !== SALES_FILTERS.STATUS.ALL || dateRange !== SALES_FILTERS.DATE.ALL
                   ? 'Essayez de modifier vos filtres'
                   : 'Partagez votre code promo pour générer des ventes'
                 }

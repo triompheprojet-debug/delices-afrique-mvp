@@ -6,9 +6,10 @@ import {
   Tag, AlertCircle, X, CheckCircle, Gift, ChevronRight, Store
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { useConfig } from '../../context/ConfigContext'; // ✅ FIX : pour calculer partnerCommission
+import { useConfig } from '../../context/ConfigContext';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { VALIDATION_RULES } from '../../utils/constants';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -34,6 +35,12 @@ const Cart = () => {
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       setPromoError('Veuillez entrer un code');
+      return;
+    }
+
+    // ✅ Validation format code promo via VALIDATION_RULES.PROMO_CODE
+    if (promoCode.length !== VALIDATION_RULES.PROMO_CODE.LENGTH || !VALIDATION_RULES.PROMO_CODE.REGEX.test(promoCode)) {
+      setPromoError(VALIDATION_RULES.PROMO_CODE.ERROR_MSG);
       return;
     }
 
@@ -323,7 +330,8 @@ const Cart = () => {
                           setPromoCode(e.target.value.toUpperCase());
                           setPromoError('');
                         }}
-                        placeholder="PROMO2024"
+                        placeholder="XXXXXX"
+                        maxLength={VALIDATION_RULES.PROMO_CODE.LENGTH}
                         className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                         onKeyPress={(e) => e.key === 'Enter' && handleApplyPromo()}
                       />

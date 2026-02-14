@@ -8,15 +8,28 @@ import {
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useConfig } from '../../context/ConfigContext';
+import { APP_CONFIG } from '../../utils/constants';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc, query, where, getDocs } from 'firebase/firestore';
 import LocationPicker from '../../components/client/LocationPicker';
 import OrderSummary from '../../components/client/OrderSummary';
 
+// Import des nouveaux composants
+import {
+  CheckoutStepIndicator,
+  CustomerInfoForm,
+  DeliveryMethodSelector,
+  DeliveryAddressForm,
+  PickupScheduler,
+  PaymentMethodSelector,
+  OrderNotesForm,
+  OrderReviewCard
+} from '../../components/client/checkout';
+
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, cartTotal, promo, finalTotal, clearCart } = useCart();
-  const { config, isOpenNow, calculatePartnerBenefits } = useConfig(); // ✅ isOpenNow + calculatePartnerBenefits réintégrés
+  const { config, isOpenNow, calculatePartnerBenefits } = useConfig(); 
 
   // Mobile: Étapes progressives
   const [mobileStep, setMobileStep] = useState(1);
@@ -26,12 +39,11 @@ const Checkout = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ États locaux pour les calculs partenaire (invisibles client, sauvegardés dans Firebase)
+  // États locaux pour les calculs partenaire
   const [calculatedCommission, setCalculatedCommission] = useState(0);
   const [calculatedPlatformGain, setCalculatedPlatformGain] = useState(0);
 
-  // ✅ Synchronisation depuis le contexte promo (quand le code est appliqué via OrderSummary)
-  // ✅ FIX : utiliser !== undefined pour accepter 0 comme valeur valide de commission
+  // Synchronisation depuis le contexte promo
   useEffect(() => {
     if (promo.code && promo.partnerCommission !== undefined) {
       setCalculatedCommission(promo.partnerCommission ?? 0);
@@ -67,7 +79,9 @@ const Checkout = () => {
   useEffect(() => {
     if (formData.method === 'Livraison' && formData.location) {
       const distance = formData.location.distance || 0;
-      const fee = Math.round(distance * (config.deliveryRatePerKm || 500));
+      const rate = config.deliveryRatePerKm || APP_CONFIG.DEFAULT_DELIVERY_RATE;
+      const fee = Math.round(distance * rate);
+      
       setFormData(prev => ({ 
         ...prev, 
         deliveryDistance: distance.toFixed(2),
@@ -85,7 +99,7 @@ const Checkout = () => {
     }
   };
 
-  // Validation desktop (toutes les infos)
+  // Validation desktop
   const validateDesktopForm = () => {
     const newErrors = {};
 
@@ -199,7 +213,7 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
-      // ✅ FIX 3a : Vérification finale que le code promo est toujours actif avant de valider
+      // Vérification finale code promo
       if (promo.code && promo.partnerId) {
         const q = query(collection(db, "partners"), where("promoCode", "==", promo.code));
         const snapshot = await getDocs(q);
@@ -216,13 +230,36 @@ const Checkout = () => {
         }
       }
 
+      // ✅ CALCUL DE LA DETTE PLATEFORME (marge sur chaque produit)
+      const calculatePlatformDebt = () => {
+        let totalDebt = 0;
+        
+        // Marge sur les produits
+        cartItems.forEach(item => {
+          const sellingPrice = Number(item.price || 0);
+          const buyingPrice = Number(item.supplierPrice || 0);
+          const quantity = Number(item.quantity || 0);
+          
+          const productMargin = (sellingPrice - buyingPrice) * quantity;
+          totalDebt += productMargin;
+        });
+        
+        // Marge sur la livraison (10% des frais de livraison)
+        const deliveryFee = Number(formData.deliveryFee || 0);
+        totalDebt += deliveryFee * 0.1;
+        
+        return Math.round(totalDebt); // Arrondi pour éviter les centimes
+      };
+
+      const platformDebt = calculatePlatformDebt();
+
       const orderData = {
-        code: 'CMD-' + Math.floor(100000 + Math.random() * 900000), // ✅ Code 6 chiffres
+        code: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
         createdAt: serverTimestamp(),
         customer: {
           name: formData.name,
           phone: formData.phone,
-          address: formData.method === 'Livraison' ? formData.address : config.address,
+          address: formData.method === 'Livraison' ? formData.address : (config.address || APP_CONFIG.DEFAULT_ADDRESS),
           location: formData.location || null
         },
         details: {
@@ -246,22 +283,24 @@ const Checkout = () => {
           image: item.image || '',
           supplierId: item.supplierId || '',
           supplierName: item.supplierName || '',
-          buyingPrice: item.buyingPrice || 0,
           supplierPrice: item.supplierPrice || 0
         })),
         promo: promo.code ? {
           code: promo.code,
-          discountAmount: promo.discountAmount || 0,  // ✅ Aligné avec Checkout_0_ (discountAmount)
+          discountAmount: promo.discountAmount || 0,
           partnerId: promo.partnerId || null,
           partnerName: promo.partnerName || '',
           partnerLevel: promo.partnerLevel || 'Standard',
-          partnerCommission: calculatedCommission,     // ✅ FIX 3b : valeur calculée (non celle du contexte)
-          platformGain: calculatedPlatformGain,         // ✅ FIX 3b : gain plateforme sauvegardé dans Firebase
+          partnerCommission: calculatedCommission,
+          platformGain: calculatedPlatformGain,
           status: 'pending',
           appliedAt: serverTimestamp()
         } : null,
         supplierId: cartItems[0]?.supplierId || null,
         supplierName: cartItems[0]?.supplierName || 'Délices d\'Afrique',
+        
+        // ✅ DETTE PLATEFORME CALCULÉE ET STOCKÉE
+        platformDebt: platformDebt,
         
         payment: {
           method: formData.paymentMethod,
@@ -288,7 +327,7 @@ const Checkout = () => {
       
       console.log('✅ Commande créée avec succès:', docRef.id);
 
-      // ✅ MISE À JOUR DES STATS PARTENAIRE (selon PDF)
+      // MISE À JOUR DES STATS PARTENAIRE
       if (promo.partnerId) {
         try {
           const partnerRef = doc(db, 'partners', promo.partnerId);
@@ -299,8 +338,6 @@ const Checkout = () => {
             const currentSales = partnerData.totalSales || 0;
             const newTotalSales = currentSales + 1;
 
-            // ✅ FIX 4 : Mise à jour atomique en 1 seul updateDoc (sécurisé)
-            // Calcul du nouveau niveau AVANT l'écriture
             let newLevel = partnerData.level || 'Standard';
             if (newTotalSales >= 150) {
               newLevel = 'Premium';
@@ -310,7 +347,6 @@ const Checkout = () => {
               newLevel = 'Standard';
             }
 
-            // Écriture atomique : totalSales + level en une seule opération
             const updatePayload = { totalSales: increment(1) };
             if (newLevel !== partnerData.level) {
               updatePayload.level = newLevel;
@@ -329,8 +365,8 @@ const Checkout = () => {
       }
       
       clearCart();
-      setCalculatedCommission(0);     // ✅ FIX 3c : reset état local
-      setCalculatedPlatformGain(0);   // ✅ FIX 3c : reset état local
+      setCalculatedCommission(0);
+      setCalculatedPlatformGain(0);
       
       navigate('/confirmation', { 
         state: { 
@@ -348,7 +384,7 @@ const Checkout = () => {
     }
   };
 
-  // ✅ FIX 2 : Blocage commandes hors horaires (réintégré depuis Checkout_0_)
+  // Blocage commandes hors horaires
   if (!isOpenNow && !config.maintenanceMode) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-950">
@@ -625,7 +661,7 @@ const Checkout = () => {
                 </div>
 
                 <LocationPicker
-                  bakeryLocation={config.bakeryLocation || { lat: -4.7667, lng: 11.8667 }}
+                  bakeryLocation={config.bakeryLocation || APP_CONFIG.BAKERY_LOCATION}
                   onLocationSelect={(loc) => handleInputChange('location', loc)}
                 />
 
@@ -781,9 +817,7 @@ const Checkout = () => {
                   >
                     <div className="text-3xl mb-2">💵</div>
                     <p className="font-bold text-slate-100 text-sm">Espèces</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      À la {formData.method === 'Livraison' ? 'livraison' : 'réception'}
-                    </p>
+                    <p className="text-xs text-slate-400 mt-1">À la {formData.method === 'Livraison' ? 'livraison' : 'réception'}</p>
                   </button>
 
                   <button
@@ -1033,91 +1067,21 @@ const Checkout = () => {
                     
                     {/* Infos client */}
                     <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                      <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                        <User size={20} className="text-purple-400" />
-                        Vos informations
-                      </h2>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-2">
-                            Nom complet *
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            className={`w-full bg-slate-900 border ${errors.name ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                            placeholder="Jean Dupont"
-                          />
-                          {errors.name && (
-                            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                              <AlertCircle size={12} />
-                              {errors.name}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-2">
-                            Téléphone *
-                          </label>
-                          <input
-                            type="tel"
-                            value={formData.phone}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className={`w-full bg-slate-900 border ${errors.phone ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                            placeholder="+242 06 000 0000"
-                          />
-                          {errors.phone && (
-                            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                              <AlertCircle size={12} />
-                              {errors.phone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <CustomerInfoForm
+                        formData={formData}
+                        errors={errors}
+                        onInputChange={handleInputChange}
+                      />
                     </div>
 
-                    {/* Méthode */}
+                    {/* Méthode de récupération */}
                     <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                      <h2 className="text-xl font-bold text-slate-100 mb-4">
-                        Mode de récupération
-                      </h2>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <button
-                          onClick={() => handleInputChange('method', 'Livraison')}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            formData.method === 'Livraison'
-                              ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-slate-700 hover:border-slate-600'
-                          }`}
-                        >
-                          <Truck size={24} className={formData.method === 'Livraison' ? 'text-purple-400' : 'text-slate-400'} />
-                          <p className="font-bold text-slate-100 mt-2">Livraison</p>
-                          <p className="text-xs text-slate-400 mt-1">À votre adresse</p>
-                        </button>
-
-                        <button
-                          onClick={() => handleInputChange('method', 'Retrait')}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            formData.method === 'Retrait'
-                              ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-slate-700 hover:border-slate-600'
-                          }`}
-                        >
-                          <Package size={24} className={formData.method === 'Retrait' ? 'text-purple-400' : 'text-slate-400'} />
-                          <p className="font-bold text-slate-100 mt-2">Retrait</p>
-                          <p className="text-xs text-slate-400 mt-1">En boutique</p>
-                        </button>
-                      </div>
-                      {errors.method && (
-                        <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.method}
-                        </p>
-                      )}
+                      <DeliveryMethodSelector
+                        selectedMethod={formData.method}
+                        onMethodChange={(value) => handleInputChange('method', value)}
+                        error={errors.method}
+                        isOpenNow={isOpenNow}
+                      />
                     </div>
 
                     {/* Livraison */}
@@ -1128,53 +1092,15 @@ const Checkout = () => {
                         exit={{ opacity: 0, height: 0 }}
                         className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6"
                       >
-                        <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                          <MapPin size={20} className="text-purple-400" />
-                          Adresse de livraison
-                        </h2>
-
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Adresse complète *
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.address}
-                              onChange={(e) => handleInputChange('address', e.target.value)}
-                              className={`w-full bg-slate-900 border ${errors.address ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                              placeholder="Quartier, Rue, Immeuble..."
-                            />
-                            {errors.address && (
-                              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                                <AlertCircle size={12} />
-                                {errors.address}
-                              </p>
-                            )}
-                          </div>
-
-                          <LocationPicker
-                            bakeryLocation={config.bakeryLocation || { lat: -4.7667, lng: 11.8667 }}
-                            onLocationSelect={(loc) => handleInputChange('location', loc)}
-                          />
-                          {errors.location && (
-                            <p className="text-xs text-red-400 flex items-center gap-1">
-                              <AlertCircle size={12} />
-                              {errors.location}
-                            </p>
-                          )}
-
-                          {formData.deliveryFee > 0 && (
-                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-                              <p className="text-sm text-slate-300">
-                                Frais de livraison: <span className="font-bold text-purple-400">{formData.deliveryFee.toLocaleString()} F</span>
-                              </p>
-                              <p className="text-xs text-slate-400 mt-1">
-                                Distance: {formData.deliveryDistance} km
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                        <DeliveryAddressForm
+                          address={formData.address}
+                          location={formData.location}
+                          deliveryFee={formData.deliveryFee}
+                          errors={errors}
+                          onAddressChange={(value) => handleInputChange('address', value)}
+                          onLocationChange={(value) => handleInputChange('location', value)}
+                          bakeryLocation={config.bakeryLocation || APP_CONFIG.BAKERY_LOCATION}
+                        />
                       </motion.div>
                     )}
 
@@ -1186,100 +1112,32 @@ const Checkout = () => {
                         exit={{ opacity: 0, height: 0 }}
                         className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6"
                       >
-                        <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                          <Calendar size={20} className="text-purple-400" />
-                          Date et heure de retrait
-                        </h2>
-
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Date *
-                            </label>
-                            <input
-                              type="date"
-                              value={formData.scheduledDate}
-                              onChange={(e) => handleInputChange('scheduledDate', e.target.value)}
-                              min={new Date().toISOString().split('T')[0]}
-                              className={`w-full bg-slate-900 border ${errors.scheduledDate ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                            />
-                            {errors.scheduledDate && (
-                              <p className="text-xs text-red-400 mt-1">{errors.scheduledDate}</p>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Heure *
-                            </label>
-                            <input
-                              type="time"
-                              value={formData.scheduledTime}
-                              onChange={(e) => handleInputChange('scheduledTime', e.target.value)}
-                              className={`w-full bg-slate-900 border ${errors.scheduledTime ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                            />
-                            {errors.scheduledTime && (
-                              <p className="text-xs text-red-400 mt-1">{errors.scheduledTime}</p>
-                            )}
-                          </div>
-                        </div>
+                        <PickupScheduler
+                          scheduledDate={formData.scheduledDate}
+                          scheduledTime={formData.scheduledTime}
+                          errors={errors}
+                          onDateChange={(value) => handleInputChange('scheduledDate', value)}
+                          onTimeChange={(value) => handleInputChange('scheduledTime', value)}
+                          shopAddress={config.address}
+                        />
                       </motion.div>
                     )}
 
                     {/* Paiement */}
                     <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                      <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                        <CreditCard size={20} className="text-purple-400" />
-                        Mode de paiement
-                      </h2>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <button
-                          onClick={() => handleInputChange('paymentMethod', 'Espèces')}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
-                            formData.paymentMethod === 'Espèces'
-                              ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-slate-700 hover:border-slate-600'
-                          }`}
-                        >
-                          <p className="font-bold text-slate-100">💵 Espèces</p>
-                          <p className="text-xs text-slate-400 mt-1">
-                            À la {formData.method === 'Livraison' ? 'livraison' : 'réception'}
-                          </p>
-                        </button>
-
-                        <button
-                          onClick={() => handleInputChange('paymentMethod', 'Mobile Money')}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
-                            formData.paymentMethod === 'Mobile Money'
-                              ? 'border-purple-500 bg-purple-500/10'
-                              : 'border-slate-700 hover:border-slate-600'
-                          }`}
-                        >
-                          <p className="font-bold text-slate-100">📱 Mobile Money</p>
-                          <p className="text-xs text-slate-400 mt-1">Airtel / MTN Money</p>
-                        </button>
-                      </div>
-                      {errors.paymentMethod && (
-                        <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.paymentMethod}
-                        </p>
-                      )}
+                      <PaymentMethodSelector
+                        selectedMethod={formData.paymentMethod}
+                        onMethodChange={(value) => handleInputChange('paymentMethod', value)}
+                        error={errors.paymentMethod}
+                        deliveryMethod={formData.method}
+                      />
                     </div>
 
                     {/* Notes */}
                     <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                      <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
-                        <FileText size={16} className="text-purple-400" />
-                        Notes ou instructions (optionnel)
-                      </label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) => handleInputChange('notes', e.target.value)}
-                        rows={3}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
-                        placeholder="Précisions, allergies, instructions..."
+                      <OrderNotesForm
+                        notes={formData.notes}
+                        onNotesChange={(value) => handleInputChange('notes', value)}
                       />
                     </div>
 
@@ -1295,20 +1153,19 @@ const Checkout = () => {
                     </motion.button>
                   </div>
 
-                  {/* Sidebar Récap - 1/3 */}
+                  {/* Résumé - 1/3 */}
                   <div className="lg:col-span-1">
-                    <div className="sticky top-24">
+                    <div className="sticky top-4">
                       <OrderSummary
                         items={cartItems}
                         subtotal={cartTotal}
                         promo={promo}
                         deliveryFee={formData.deliveryFee}
                         total={totalWithDelivery}
-                        showEdit={true}
-                        onEdit={() => navigate('/cart')}
                       />
                     </div>
                   </div>
+
                 </div>
               </motion.div>
             )}
@@ -1332,133 +1189,12 @@ const Checkout = () => {
                   </p>
                 </div>
 
-                {/* Infos client */}
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                      <User size={18} className="text-purple-400" />
-                      Informations client
-                    </h3>
-                    <button
-                      onClick={() => setDesktopStep(1)}
-                      className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
-                    >
-                      <Edit2 size={14} />
-                      Modifier
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Nom</span>
-                      <span className="text-slate-100 font-medium">{formData.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Téléphone</span>
-                      <span className="text-slate-100 font-medium">{formData.phone}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mode récupération */}
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                      {formData.method === 'Livraison' ? (
-                        <Truck size={18} className="text-purple-400" />
-                      ) : (
-                        <Package size={18} className="text-purple-400" />
-                      )}
-                      {formData.method}
-                    </h3>
-                    <button
-                      onClick={() => setDesktopStep(1)}
-                      className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
-                    >
-                      <Edit2 size={14} />
-                      Modifier
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 text-sm">
-                    {formData.method === 'Livraison' ? (
-                      <>
-                        <div className="flex items-start gap-2">
-                          <MapPin size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-slate-400 text-xs mb-1">Adresse</p>
-                            <p className="text-slate-100 font-medium">{formData.address}</p>
-                          </div>
-                        </div>
-                        {formData.deliveryFee > 0 && (
-                          <div className="flex justify-between pt-2 border-t border-slate-700/30">
-                            <span className="text-slate-400">Frais de livraison</span>
-                            <span className="text-purple-400 font-bold">
-                              {formData.deliveryFee.toLocaleString()} F
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-start gap-2">
-                          <MapPin size={16} className="text-slate-400 mt-0.5" />
-                          <div>
-                            <p className="text-slate-400 text-xs mb-1">Lieu</p>
-                            <p className="text-slate-100 font-medium">{config.address || 'Boutique principale'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Calendar size={16} className="text-slate-400 mt-0.5" />
-                          <div>
-                            <p className="text-slate-400 text-xs mb-1">Date et heure</p>
-                            <p className="text-slate-100 font-medium">
-                              {formData.scheduledDate} à {formData.scheduledTime}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Paiement */}
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                      <CreditCard size={18} className="text-purple-400" />
-                      Paiement
-                    </h3>
-                    <button
-                      onClick={() => setDesktopStep(1)}
-                      className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
-                    >
-                      <Edit2 size={14} />
-                      Modifier
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{formData.paymentMethod === 'Espèces' ? '💵' : '📱'}</div>
-                    <div>
-                      <p className="text-slate-100 font-medium">{formData.paymentMethod}</p>
-                      <p className="text-xs text-slate-400">
-                        À la {formData.method === 'Livraison' ? 'livraison' : 'réception'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {formData.notes && (
-                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-bold text-slate-100 mb-3 flex items-center gap-2">
-                      <FileText size={18} className="text-purple-400" />
-                      Instructions
-                    </h3>
-                    <p className="text-sm text-slate-300 italic">"{formData.notes}"</p>
-                  </div>
-                )}
+                {/* Cartes de révision */}
+                <OrderReviewCard
+                  formData={formData}
+                  config={config}
+                  onEdit={() => setDesktopStep(1)}
+                />
 
                 {/* Récap commande */}
                 <OrderSummary

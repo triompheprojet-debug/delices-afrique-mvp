@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { APP_CONFIG } from '../../utils/constants';
 import { db } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
@@ -18,15 +19,17 @@ const Settings = () => {
 
   // État initial global
   const [config, setConfig] = useState({
-    openingTime: '08:00',
-    closingTime: '22:00',
+    openingTime: APP_CONFIG.DEFAULT_OPENING,
+    closingTime: APP_CONFIG.DEFAULT_CLOSING,
     isShopOpen: true,
-    phoneNumber: '+242 06 000 0000',
-    address: 'Centre Ville, Pointe-Noire',
+    // CORRECTION ICI : Utilisation des constantes
+    phoneNumber: APP_CONFIG.CONTACT_PHONE,     
+    address: APP_CONFIG.DEFAULT_ADDRESS,       
     bannerMessage: '',
     maintenanceMode: false,
-    deliveryRatePerKm: 500,
-    bakeryLocation: { lat: -4.793, lng: 11.853 },
+    deliveryRatePerKm: APP_CONFIG.DEFAULT_DELIVERY_RATE,
+    // CORRECTION ICI : Utilisation de la constante GPS
+    bakeryLocation: APP_CONFIG.BAKERY_LOCATION, 
     categories: [] 
   });
 

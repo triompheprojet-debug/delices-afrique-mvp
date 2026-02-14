@@ -4,8 +4,7 @@ import axios from 'axios';
 import { Search, Check } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-// Configuration Icônes Leaflet
+ 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -17,7 +16,9 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Composant interne pour déplacer la vue
+// Position par défaut (Pointe-Noire Centre) au cas où bakeryLocation est manquant
+const DEFAULT_BAKERY_LOCATION = { lat: -4.776077, lng: 11.861755 };
+
 const MapUpdater = ({ center }) => {
   const map = useMap();
   useEffect(() => {
@@ -26,11 +27,9 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// Composant interne Marqueur Interactif
 const LocationMarker = ({ setPosition, bakeryLoc, onLocationFound }) => {
   const [markerPos, setMarkerPos] = useState(null);
   
-  // Formule Haversine pour la distance
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI/180);
@@ -48,13 +47,12 @@ const LocationMarker = ({ setPosition, bakeryLoc, onLocationFound }) => {
       setMarkerPos(e.latlng);
       setPosition(e.latlng);
       
-      // 1. Calcul Distance
       let dist = 0;
-      if (bakeryLoc) {
+      // Sécurisation ici aussi
+      if (bakeryLoc && bakeryLoc.lat) {
         dist = calculateDistance(bakeryLoc.lat, bakeryLoc.lng, lat, lng);
       }
 
-      // 2. Reverse Geocoding (Trouver nom rue)
       let addressName = "Position Carte";
       try {
         const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -65,7 +63,6 @@ const LocationMarker = ({ setPosition, bakeryLoc, onLocationFound }) => {
         console.error("Erreur geocoding", error);
       }
 
-      // 3. Remonter l'info au parent
       onLocationFound({ lat, lng, distance: dist, addressName });
     },
   });
@@ -73,14 +70,23 @@ const LocationMarker = ({ setPosition, bakeryLoc, onLocationFound }) => {
   return markerPos ? <Marker position={markerPos}><Popup>Lieu de livraison</Popup></Marker> : null;
 };
 
-// --- COMPOSANT PRINCIPAL EXPORTÉ ---
-const LocationPicker = ({ bakeryLocation, onLocationSelect }) => {
+// --- CORRECTION PRINCIPALE ICI ---
+// Ajout de la valeur par défaut dans la déstructuration des props
+const LocationPicker = ({ bakeryLocation = DEFAULT_BAKERY_LOCATION, onLocationSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Utilisation sécurisée
   const [mapCenter, setMapCenter] = useState([bakeryLocation.lat, bakeryLocation.lng]);
-  const [foundLocation, setFoundLocation] = useState(null); // Pour afficher le feedback visuel
+  const [foundLocation, setFoundLocation] = useState(null);
 
-  // Gestion Recherche Texte
+  // Mise à jour du centre si la prop change (ex: chargement asynchrone)
+  useEffect(() => {
+    if (bakeryLocation && bakeryLocation.lat) {
+       setMapCenter([bakeryLocation.lat, bakeryLocation.lng]);
+    }
+  }, [bakeryLocation]);
+
   const handleSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
@@ -92,7 +98,6 @@ const LocationPicker = ({ bakeryLocation, onLocationSelect }) => {
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
         
-        // Simuler un clic pour déclencher le calcul de distance
         const R = 6371; 
         const dLat = (lat - bakeryLocation.lat) * (Math.PI/180);
         const dLon = (lng - bakeryLocation.lng) * (Math.PI/180);
@@ -102,7 +107,6 @@ const LocationPicker = ({ bakeryLocation, onLocationSelect }) => {
 
         setMapCenter([lat, lng]);
         
-        // Mise à jour locale et remontée parent
         const locData = { lat, lng, distance: dist, addressName: searchQuery };
         setFoundLocation(locData);
         onLocationSelect(locData);
@@ -119,7 +123,7 @@ const LocationPicker = ({ bakeryLocation, onLocationSelect }) => {
 
   const handleMapClickResult = (data) => {
       setFoundLocation(data);
-      setSearchQuery(data.addressName); // On remplit l'input avec l'adresse trouvée au clic
+      setSearchQuery(data.addressName);
       onLocationSelect(data);
   };
 
@@ -157,14 +161,13 @@ const LocationPicker = ({ bakeryLocation, onLocationSelect }) => {
                 <MapUpdater center={mapCenter} />
                 <Marker position={[bakeryLocation.lat, bakeryLocation.lng]}><Popup>La Pâtisserie</Popup></Marker>
                 <LocationMarker 
-                    setPosition={() => {}} // Géré en interne par LocationMarker pour l'affichage
+                    setPosition={() => {}} 
                     bakeryLoc={bakeryLocation}
                     onLocationFound={handleMapClickResult}
                 />
             </MapContainer>
         </div>
 
-        {/* Feedback sous la carte */}
         <div className={`flex items-center justify-between p-3 rounded-lg text-sm transition-colors ${foundLocation ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-blue-50 text-blue-800'}`}>
             <span>{foundLocation ? "Position validée" : "Indiquez votre position pour calculer les frais."}</span>
             {foundLocation && <span className="font-bold">{foundLocation.distance.toFixed(2)} km</span>}

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, ShoppingBag, X, Trash2, ArrowRight } from 'lucide-react';
+import { VALIDATION_RULES, PAYMENT_METHODS, DELIVERY_METHODS } from '../utils/constants';
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
@@ -159,6 +160,10 @@ export const CartProvider = ({ children }) => {
 
   // Ajout produit avec vérification fournisseur
   const addToCart = (product) => {
+    // ✅ Vérification anti-spam panier (VALIDATION_RULES.ORDER.MAX_ITEMS)
+    const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    if (currentCount >= VALIDATION_RULES.ORDER.MAX_ITEMS) return;
+
     if (cartItems.length > 0) {
       const currentSupplier = cartItems[0].supplierId;
       const currentSupplierName = cartItems[0].supplierName;
@@ -236,6 +241,16 @@ export const CartProvider = ({ children }) => {
 
   // ✅ FIX BUG-4 : updateQuantity filtre maintenant les items à quantité 0
   const updateQuantity = (productId, delta) => {
+
+    if (delta > 0) {
+      const currentCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+      
+      // Bloque l'ajout si on atteint ou dépasse 50 articles
+      if (currentCount >= VALIDATION_RULES.ORDER.MAX_ITEMS) {
+        alert("Vous avez atteint le nombre maximum d'articles autorisé.");
+        return; 
+      }
+    }
     setCartItems(prevItems => {
       return prevItems
         .map(item => {

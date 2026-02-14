@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingBag, Gift, Truck } from 'lucide-react';
+import { DELIVERY_METHODS } from '../../utils/constants';
 
 /**
  * Composant réutilisable pour afficher le récapitulatif de commande
@@ -87,7 +88,7 @@ const OrderSummary = ({
           <div className="flex justify-between text-sm text-slate-300">
             <span className="flex items-center gap-1">
               <Truck size={14} />
-              Livraison
+              {DELIVERY_METHODS.DELIVERY}
             </span>
             <span className="font-medium">{deliveryFee.toLocaleString()} F</span>
           </div>

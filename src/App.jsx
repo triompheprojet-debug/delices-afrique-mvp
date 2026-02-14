@@ -38,7 +38,7 @@ import SupplierDashboard from './pages/supplier/SupplierDashboard';
 import SupplierProducts from './pages/supplier/SupplierProducts';
 import SupplierOrders from './pages/supplier/SupplierOrders';
 import SupplierWallet from './pages/supplier/SupplierWallet';
-import SupplierRules from './pages/supplier/SupplierRules';
+import SupplierInfos from './pages/supplier/SupplierInfos';
 
 
 
@@ -92,7 +92,7 @@ function App() {
                 <Route path="products" element={<SupplierProducts />} />
                 <Route path="orders" element={<SupplierOrders />} />
                 <Route path="wallet" element={<SupplierWallet />} />
-                <Route path="rules" element={<SupplierRules />} />
+                <Route path="infos" element={<SupplierInfos />} />
               </Route>
               
             </Routes>
