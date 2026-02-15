@@ -67,20 +67,26 @@ const CompactProductCard = ({
         <motion.button
           whileTap={{ scale: 0.8 }}
           onClick={handleHeartClick}
-          className="absolute top-1 right-1 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-[2px] border border-white/10 shadow-sm group/heart hover:bg-slate-800 transition-colors"
+          /* CHANGEMENTS : 
+            - top-1.5 / right-1.5 : pour le coller dans le coin
+            - !w-8 !h-8 : On force une taille fixe de 32px (assez pour cliquer, assez petit pour le design)
+            - bg-black/50 : Fond plus sombre et transparent pour éviter cet effet "pastille grise"
+          */
+          className="absolute top-1.5 right-1.5 z-30 !w-8 !h-8 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center group/heart"
         >
           <Heart 
-            className={`w-4 h-4 transition-colors duration-300 ${
+            /* Taille de l'icône fixe à 14px pour rester élégant */
+            className={`w-3.5 h-3.5 transition-colors duration-300 ${
               isInCart 
                 ? 'fill-pink-500 text-pink-500' 
-                : 'text-white/90 group-hover/heart:text-pink-400' 
+                : 'text-white'
             }`} 
           />
         </motion.button>
 
         {/* Badge Fournisseur */}
         {product.supplierName && (
-          <div className="absolute top-2 left-2 z-20 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
+          <div className="absolute top-1.5 left-1.5 z-20 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
             <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
               {product.supplierName.charAt(0)}
             </div>

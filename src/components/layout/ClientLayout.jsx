@@ -130,11 +130,7 @@ const ClientLayout = () => {
          </div>
       )}
       
-      {config.bannerMessage && (
-        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[11px] sm:text-xs py-1.5 sm:py-2 px-4 text-center font-medium">
-          {config.bannerMessage}
-        </div>
-      )}
+      
 
       {/* Navbar Desktop - z-50 pour être au-dessus de tout */}
       <nav className={`hidden lg:block sticky top-0 z-50 transition-all duration-300 border-b ${
