@@ -7,22 +7,7 @@ import {
   BarChart3, Clock, Share2, Smartphone, ArrowRight,
   Trophy, Rocket, Star, Lock, Eye, EyeOff
 } from 'lucide-react';
-
-/**
- * 🎯 PAGE D'ONBOARDING & INFORMATION PROGRAMME PARTENAIRE
- * 
- * Cette page explique TOUT le fonctionnement du programme d'affiliation.
- * Objectif : Convaincre et motiver psychologiquement les futurs partenaires.
- * 
- * Structure :
- * 1. Hero motivant (vision millionnaire)
- * 2. Comment ça marche (processus simple)
- * 3. Système de niveaux & gains
- * 4. Calcul transparent des commissions
- * 5. Success stories / témoignages
- * 6. FAQ complète
- * 7. CTA d'inscription
- */
+import PartnerPublicHeader from '../../components/partner/PartnerPublicHeader';
 
 const PartnerProgramInfo = () => {
   const [showCalculator, setShowCalculator] = useState(false);
@@ -57,7 +42,7 @@ const PartnerProgramInfo = () => {
 
   return (
     <div className="bg-slate-950 min-h-screen">
-      
+      <PartnerPublicHeader />
       {/* ========================================
           🏆 HERO SECTION - VISION MILLIONNAIRE
           ======================================== */}

@@ -140,15 +140,23 @@ export const MOBILE_OPERATORS = ['MTN Money', 'Airtel Money'];
 // =============================================================================
 
 export const VALIDATION_RULES = {
+  NAME: {
+    MIN_LENGTH: 2,
+    MAX_LENGTH: 50,
+    REGEX: /^[a-zA-ZÀ-ÿ\s'-]+$/, // Lettres, espaces, apostrophes, tirets
+    ERROR_MSG: "Le nom doit contenir entre 2 et 50 caractères (lettres uniquement)"
+  },
   PHONE: {
-    REGEX: /^(06|05|04)\d{7}$/, // Format local Congo (06... 05... 04...)
+    REGEX: /^(06|05|04)\d{7}$/, // Format local Congo
     LENGTH: 9,
-    ERROR_MSG: "Numéro invalide (doit commencer par 06, 05 ou 04 et contenir 9 chiffres)"
+    PREFIXES: ['06', '05', '04'],
+    ERROR_MSG: "Numéro invalide (doit commencer par 06, 05 ou 04 et contenir 9 chiffres au total)"
   },
   PROMO_CODE: {
-    LENGTH: 10,
-    REGEX: /^[A-Z0-9-]{10}$/, // Seulement majuscules et chiffres
-    ERROR_MSG: "Le code promo doit contenir 6 caractères alphanumériques"
+    LENGTH: 8, // DA-XXX-XX = 8 caractères
+    REGEX: /^DA-[A-Z0-9]{3}-[A-Z0-9]{2}$/, // Format strict DA-XXX-XX
+    PREFIX: 'DA',
+    ERROR_MSG: "Le code promo doit être au format DA-XXX-XX (ex: DA-A1B-C2)"
   },
   WITHDRAWAL: {
     MIN_AMOUNT: 2000, // Seuil plancher absolu

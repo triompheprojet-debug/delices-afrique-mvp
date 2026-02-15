@@ -543,18 +543,40 @@ const PartnerSales = () => {
             </div>
           </div>
 
-          {/* Sous-stats périodes */}
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            {[
-              { label: "Aujourd'hui", val: stats.todayCount },
-              { label: 'Cette semaine', val: stats.weekCount },
-              { label: 'Ce mois', val: stats.monthCount }
-            ].map(({ label, val }) => (
-              <div key={label} className="bg-slate-950/40 border border-slate-800/60 rounded-xl px-3 py-2 flex items-center justify-between">
-                <span className="text-xs text-slate-500">{label}</span>
-                <span className="text-sm font-bold text-slate-300">{val}</span>
-              </div>
-            ))}
+          {/* Sous-stats périodes - Cards empilées mobile */}
+          <div className="mt-3 sm:mt-4">
+            {/* Mobile : une seule carte avec 3 lignes */}
+            <div className="sm:hidden bg-slate-950/40 border border-slate-800/60 rounded-xl divide-y divide-slate-800/40">
+              {[
+                { label: "Aujourd'hui", val: stats.todayCount, icon: Clock },
+                { label: 'Cette semaine', val: stats.weekCount, icon: Calendar },
+                { label: 'Ce mois', val: stats.monthCount, icon: TrendingUp }
+              ].map(({ label, val, icon: Icon }) => (
+                <div key={label} className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-2.5">
+                    <Icon size={14} className="text-slate-500"/>
+                    <span className="text-sm text-slate-400 font-medium">{label}</span>
+                  </div>
+                  <span className="text-lg font-bold text-slate-200 tabular-nums">{val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop : 3 cards */}
+            <div className="hidden sm:grid grid-cols-3 gap-3">
+              {[
+                { label: "Aujourd'hui", val: stats.todayCount, icon: Clock },
+                { label: 'Cette semaine', val: stats.weekCount, icon: Calendar },
+                { label: 'Ce mois', val: stats.monthCount, icon: TrendingUp }
+              ].map(({ label, val, icon: Icon }) => (
+                <div key={label} className="bg-slate-950/40 border border-slate-800/60 rounded-xl px-3 py-2 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                    <Icon size={10}/>{label}
+                  </span>
+                  <span className="text-sm font-bold text-slate-300 tabular-nums">{val}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

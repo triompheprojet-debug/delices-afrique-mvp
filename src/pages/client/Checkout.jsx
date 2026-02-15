@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useConfig } from '../../context/ConfigContext';
-import { APP_CONFIG } from '../../utils/constants';
+import { APP_CONFIG, VALIDATION_RULES } from '../../utils/constants';
 import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc, query, where, getDocs } from 'firebase/firestore';
 import LocationPicker from '../../components/client/LocationPicker';
@@ -103,8 +103,24 @@ const Checkout = () => {
   const validateDesktopForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Nom requis';
-    if (!formData.phone.trim()) newErrors.phone = 'Téléphone requis';
+    
+    // Validation NOM
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nom requis';
+    } else if (formData.name.length < VALIDATION_RULES.NAME.MIN_LENGTH || 
+              formData.name.length > VALIDATION_RULES.NAME.MAX_LENGTH) {
+      newErrors.name = `Le nom doit contenir entre ${VALIDATION_RULES.NAME.MIN_LENGTH} et ${VALIDATION_RULES.NAME.MAX_LENGTH} caractères`;
+    } else if (!VALIDATION_RULES.NAME.REGEX.test(formData.name)) {
+      newErrors.name = VALIDATION_RULES.NAME.ERROR_MSG;
+    }
+
+    // Validation TÉLÉPHONE
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Téléphone requis';
+    } else if (!VALIDATION_RULES.PHONE.REGEX.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = VALIDATION_RULES.PHONE.ERROR_MSG;
+    }
+
     if (!formData.method) newErrors.method = 'Choisissez un mode';
     
     if (formData.method === 'Livraison') {
@@ -129,10 +145,21 @@ const Checkout = () => {
 
     switch(step) {
       case 1:
-        if (!formData.name.trim()) newErrors.name = 'Nom requis';
+        if (!formData.name.trim()) {
+          newErrors.name = 'Nom requis';
+        } else if (formData.name.length < VALIDATION_RULES.NAME.MIN_LENGTH || 
+                  formData.name.length > VALIDATION_RULES.NAME.MAX_LENGTH) {
+          newErrors.name = `Le nom doit contenir entre ${VALIDATION_RULES.NAME.MIN_LENGTH} et ${VALIDATION_RULES.NAME.MAX_LENGTH} caractères`;
+        } else if (!VALIDATION_RULES.NAME.REGEX.test(formData.name)) {
+          newErrors.name = VALIDATION_RULES.NAME.ERROR_MSG;
+        }
         break;
       case 2:
-        if (!formData.phone.trim()) newErrors.phone = 'Téléphone requis';
+        if (!formData.phone.trim()) {
+          newErrors.phone = 'Téléphone requis';
+        } else if (!VALIDATION_RULES.PHONE.REGEX.test(formData.phone.replace(/\s/g, ''))) {
+          newErrors.phone = VALIDATION_RULES.PHONE.ERROR_MSG;
+        }
         break;
       case 3:
         if (!formData.method) newErrors.method = 'Choisissez un mode';
