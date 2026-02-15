@@ -24,7 +24,7 @@ const ProductCard = ({ product, onClickImage }) => {
       className="group relative bg-slate-800/40 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-slate-700/40 overflow-hidden flex flex-col hover:border-purple-500/30 hover:shadow-lg transition-all duration-300"
     >
       
-      {/* IMAGE - Ratio optimisé : Correction ici (aspect-[4/3] au lieu de aspect-square) */}
+      {/* IMAGE - Ratio optimisé */}
       <div 
         className="relative w-full aspect-[4/3] overflow-hidden bg-slate-900/50 cursor-pointer"
         onClick={() => onClickImage && onClickImage(product)}
@@ -78,7 +78,7 @@ const ProductCard = ({ product, onClickImage }) => {
         )}
       </div>
 
-      {/* CONTENU - Ultra compact, zéro espaces vides */}
+      {/* CONTENU */}
       <div className="p-2.5 sm:p-3 flex flex-col">
         
         {/* Nom du produit */}

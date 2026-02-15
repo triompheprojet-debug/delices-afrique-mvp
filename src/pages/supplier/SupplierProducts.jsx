@@ -8,12 +8,14 @@ import {
   Plus, Package, Search, LayoutGrid, List as ListIcon, 
   Store, Clock, CheckCircle, XCircle, X, UploadCloud, 
   DollarSign, Trash2, Edit3, Power, AlertTriangle, 
-  TrendingUp, Sparkles, Filter, ChevronUp
+  TrendingUp, Sparkles, Filter, ChevronUp,Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SupplierProducts = () => {
-  const { supplier } = useOutletContext();
+  const context = useOutletContext();
+  const supplier = context?.supplier;
+  
   const { config } = useConfig();
   
   // Data State

@@ -18,7 +18,15 @@ const ClientLayout = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showMobileNav, setShowMobileNav] = useState(true);
 
-  // ... (Ton useEffect pour le scroll desktop reste identique)
+  // Desktop scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // --- LOGIQUE MOBILE : Scroll Intelligente ---
   useEffect(() => {
@@ -60,7 +68,6 @@ const ClientLayout = () => {
   }, [cartCount]); 
 
   if (loading) return (
-    // ... (Ton loading reste identique)
     <div className="h-screen flex flex-col items-center justify-center bg-slate-950">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
       <p className="text-slate-300 font-serif animate-pulse">Chargement...</p>
@@ -68,7 +75,6 @@ const ClientLayout = () => {
   );
 
   if (config.maintenanceMode) {
-     // ... (Ton mode maintenance reste identique)
     return (
       <div className="h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center">
         <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mb-6 animate-pulse">
@@ -80,7 +86,6 @@ const ClientLayout = () => {
     );
   }
 
-  // ... (Ton composant BottomNavLink reste identique)
   const BottomNavLink = ({ to, icon: Icon, label, badge }) => {
     const isActive = location.pathname === to;
     return (
@@ -117,7 +122,7 @@ const ClientLayout = () => {
   return (
     <div className="font-sans text-slate-100 bg-slate-950 flex flex-col min-h-screen relative">
       
-      {/* ... (Top Bar et Navbar Desktop restent identiques) ... */}
+      {/* Banners - Non sticky */}
       {!config.isShopOpen && !config.maintenanceMode && (
          <div className="bg-slate-900 border-b border-slate-800 text-slate-300 text-[11px] sm:text-xs py-1.5 sm:py-2 px-4 text-center flex items-center justify-center gap-2">
             <Clock size={12} className="text-purple-400 sm:w-3.5 sm:h-3.5"/> 
@@ -131,12 +136,15 @@ const ClientLayout = () => {
         </div>
       )}
 
-      <nav className={`hidden lg:block sticky top-0 z-40 transition-all duration-300 border-b ${
+      {/* Navbar Desktop - z-50 pour être au-dessus de tout */}
+      <nav className={`hidden lg:block sticky top-0 z-50 transition-all duration-300 border-b ${
         isScrolled 
-          ? 'bg-slate-900/95 backdrop-blur-md py-3 border-slate-800' 
-          : 'bg-slate-900 py-4 border-slate-800'
+          ? 'bg-slate-900/95 backdrop-blur-md border-slate-800' 
+          : 'bg-slate-900 border-slate-800'
       }`}>
-        <div className="container mx-auto px-4 flex justify-between items-center max-w-7xl">
+        <div className={`container mx-auto px-4 flex justify-between items-center max-w-7xl transition-all duration-300 ${
+          isScrolled ? 'h-16' : 'h-20'
+        }`}>
           <Link to="/" className="text-xl lg:text-2xl text-white font-serif font-bold tracking-wider">
             Délices <span className="text-purple-400">d'Afrique</span>
           </Link>
@@ -164,9 +172,9 @@ const ClientLayout = () => {
           </div>
           <div className="flex items-center gap-4">
              <Link to="/cart" className="relative p-2.5 hover:bg-slate-800 rounded-xl transition-colors group">
-               <ShoppingBag size={24} className="text-slate-300 group-hover:text-purple-400 transition-colors"/>
+               <ShoppingBag size={20} className="text-slate-300 group-hover:text-purple-400 transition" />
                {cartCount > 0 && (
-                 <span className="absolute top-0 right-0 bg-pink-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-md">
+                 <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-lg">
                    {cartCount}
                  </span>
                )}
@@ -175,20 +183,19 @@ const ClientLayout = () => {
         </div>
       </nav>
 
-      <main className="flex-grow pb-24 lg:pb-0">
+      {/* Contenu principal */}
+      <main className="flex-1">
         <Outlet />
       </main>
 
-      {/* --- BOTTOM BAR MOBILE (MODIFIÉE) --- */}
-      <motion.div 
+      {/* Navigation mobile - Sticky bottom avec z-50 */}
+      <motion.div
         initial={{ y: 0 }}
-        // MODIFICATION ICI : On utilise "160%" au lieu de "100%"
-        // Cela force la barre à descendre plus bas pour cacher le bouton flottant
-        animate={{ y: showMobileNav ? 0 : "160%" }} 
+        animate={{ y: showMobileNav ? 0 : 100 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="lg:hidden fixed bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-50 pb-safe shadow-2xl"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-2 pb-safe shadow-2xl"
       >
-        <div className="grid grid-cols-5 gap-0 px-2 py-1.5 pb-safe-offset-2">
+        <div className="flex items-end justify-between max-w-lg mx-auto">
           <BottomNavLink to="/" icon={Home} label="Accueil" />
           <BottomNavLink to="/menu" icon={UtensilsCrossed} label="Menu" />
           
@@ -220,9 +227,8 @@ const ClientLayout = () => {
         </div>
       </motion.div>
 
-      {/* ... (Footer et Modale restent identiques) ... */}
+      {/* Footer Desktop */}
       <footer className="hidden lg:block bg-slate-900 border-t border-slate-800 text-white pt-12 lg:pt-16 pb-8">
-        {/* ... Contenu Footer ... */}
          <div className="container mx-auto px-4 max-w-7xl">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-12">
             <div className="col-span-1">
@@ -294,6 +300,7 @@ const ClientLayout = () => {
         </div>
       </footer>
 
+      {/* Modale Conflit Vendeur */}
       <AnimatePresence>
         {vendorConflict.isOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
