@@ -92,62 +92,66 @@ const PartnerWallet = () => {
     }
   };
 
-  // ✅ CORRECTION #2: Calculs dates DYNAMIQUES (pas de valeurs fixes)
-  const loadEarningsData = async (partnerId) => {
-    try {
-      const q = query(
-        collection(db, "orders"),
-        where("promo.partnerId", "==", partnerId),
-        where("status", "in", [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED]),
-        orderBy("createdAt", "desc")
-      );
-      
-      const snapshot = await getDocs(q);
-      const orders = snapshot.docs.map(doc => doc.data());
-      
-      // ✅ Gains 30 derniers jours (dynamique)
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
-      const recentEarnings = orders.filter(order => {
-        const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
-        return orderDate >= thirtyDaysAgo;
-      });
-      
-      const last30Total = recentEarnings.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
-      const projectedMonthly = Math.round(last30Total);
-      
-      // ✅ Graphique 7 derniers jours
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        date.setHours(0, 0, 0, 0);
-        return {
-          date: date.toISOString().split('T')[0],
-          day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
-          earnings: 0
-        };
-      });
-      
-      orders.forEach(order => {
-        const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
-        orderDate.setHours(0, 0, 0, 0);
-        const dateStr = orderDate.toISOString().split('T')[0];
-        const dayData = last7Days.find(d => d.date === dateStr);
-        if (dayData) {
-          dayData.earnings += order.promo?.partnerCommission || 0;
-        }
-      });
-      
-      setStats(prev => ({
-        ...prev,
-        projectedMonthly,
-        last7DaysEarnings: last7Days
-      }));
-    } catch (error) {
-      console.error('Erreur chargement earnings:', error);
-    }
-  };
+    const loadEarningsData = async (partnerId) => {
+      try {
+        const q = query(
+          collection(db, "orders"),
+          where("promo.partnerId", "==", partnerId),
+          orderBy("createdAt", "desc")
+        );
+        
+        const snapshot = await getDocs(q);
+        const orders = snapshot.docs.map(doc => doc.data());
+        
+        // ✅ CORRECTION : Filtrer uniquement les commandes livrées/terminées
+        const deliveredOrders = orders.filter(o => 
+          o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED
+        );
+        
+        // ✅ Gains 30 derniers jours (dynamique)
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        const recentEarnings = deliveredOrders.filter(order => {
+          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
+          return orderDate >= thirtyDaysAgo;
+        });
+        
+        const last30Total = recentEarnings.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+        const projectedMonthly = Math.round(last30Total);
+        
+        // ✅ Graphique 7 derniers jours
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - i));
+          date.setHours(0, 0, 0, 0);
+          return {
+            date: date.toISOString().split('T')[0],
+            day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+            earnings: 0
+          };
+        });
+        
+        // ✅ CORRECTION : Utiliser deliveredOrders au lieu de orders
+        deliveredOrders.forEach(order => {
+          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
+          orderDate.setHours(0, 0, 0, 0);
+          const dateStr = orderDate.toISOString().split('T')[0];
+          const dayData = last7Days.find(d => d.date === dateStr);
+          if (dayData) {
+            dayData.earnings += order.promo?.partnerCommission || 0;
+          }
+        });
+        
+        setStats(prev => ({
+          ...prev,
+          projectedMonthly,
+          last7DaysEarnings: last7Days
+        }));
+      } catch (error) {
+        console.error('Erreur chargement earnings:', error);
+      }
+    };
 
   const handleWithdrawRequest = async (e) => {
     e.preventDefault();
