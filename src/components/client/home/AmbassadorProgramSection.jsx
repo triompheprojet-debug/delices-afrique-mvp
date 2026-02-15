@@ -17,7 +17,7 @@ const AmbassadorProgramSection = () => {
       commission: '150 FCFA',
       earnings: '4,500 FCFA/mois',
       sales: 'Dès la 1ère vente',
-      color: 'from-slate-600 to-slate-700',
+      color: 'from-green-600 to-slate-700',
       highlight: false
     },
     { 

@@ -102,22 +102,6 @@ const MenuHero = () => {
           </motion.p>
         </motion.div>
       </div>
-
-      {/* Indicateurs de carousel élégants */}
-      <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {backgroundImages.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentImageIndex(index)}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              index === currentImageIndex
-                ? 'w-10 bg-gradient-to-r from-purple-500 to-pink-500'
-                : 'w-1.5 bg-slate-600/60 hover:bg-slate-500/80'
-            }`}
-            aria-label={`Image ${index + 1}`}
-          />
-        ))}
-      </div>
     </div>
   );
 };
