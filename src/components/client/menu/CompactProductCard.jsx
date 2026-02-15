@@ -67,13 +67,13 @@ const CompactProductCard = ({
         <motion.button
           whileTap={{ scale: 0.8 }}
           onClick={handleHeartClick}
-          className="absolute top-2 right-2 z-30 p-1.5 sm:p-2 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-lg group/heart hover:bg-slate-800 transition-colors"
+          className="absolute top-1 right-1 z-30 p-1.5 rounded-full bg-black/40 backdrop-blur-[2px] border border-white/10 shadow-sm group/heart hover:bg-slate-800 transition-colors"
         >
           <Heart 
-            className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-300 ${
+            className={`w-4 h-4 transition-colors duration-300 ${
               isInCart 
-                ? 'fill-pink-500 text-pink-500' // Si dans le panier : Rempli Rose
-                : 'text-slate-200 group-hover/heart:text-pink-400' // Sinon : Contour blanc
+                ? 'fill-pink-500 text-pink-500' 
+                : 'text-white/90 group-hover/heart:text-pink-400' 
             }`} 
           />
         </motion.button>
