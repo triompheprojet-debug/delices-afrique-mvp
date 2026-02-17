@@ -235,12 +235,11 @@ const Checkout = () => {
       setMobileStep(10);
     }
   };
-
   const handleSubmitOrder = async () => {
     setIsSubmitting(true);
 
     try {
-      // Vérification finale code promo
+      // 1. Vérification de la validité du partenaire (si code promo utilisé)
       if (promo.code && promo.partnerId) {
         const q = query(collection(db, "partners"), where("promoCode", "==", promo.code));
         const snapshot = await getDocs(q);
@@ -257,28 +256,35 @@ const Checkout = () => {
         }
       }
 
-      // ✅ CALCUL DE LA DETTE PLATEFORME (marge sur chaque produit)
-      const calculatePlatformDebt = () => {
-        let totalDebt = 0;
-        
-        // Marge sur les produits
-        cartItems.forEach(item => {
-          const sellingPrice = Number(item.price || 0);
-          const buyingPrice = Number(item.supplierPrice || 0);
-          const quantity = Number(item.quantity || 0);
-          
-          const productMargin = (sellingPrice - buyingPrice) * quantity;
-          totalDebt += productMargin;
-        });
-        
-        // Marge sur la livraison (10% des frais de livraison)
-        const deliveryFee = Number(formData.deliveryFee || 0);
-        totalDebt += deliveryFee * 0.1;
-        
-        return Math.round(totalDebt); // Arrondi pour éviter les centimes
-      };
+      // 2. CALCULS FINANCIERS CENTRALISÉS
+      
+      // A. Marge totale sur les produits (Prix Vente - Prix Fournisseur)
+      let totalProductMargin = 0;
+      cartItems.forEach(item => {
+        const sellingPrice = Number(item.price || 0);
+        const buyingPrice = Number(item.supplierPrice || 0);
+        const quantity = Number(item.quantity || 0);
+        totalProductMargin += (sellingPrice - buyingPrice) * quantity;
+      });
 
-      const platformDebt = calculatePlatformDebt();
+      // B. Part de la livraison revenant à la plateforme (10%)
+      const deliveryFee = Number(formData.deliveryFee || 0);
+      const deliveryMargin = deliveryFee * 0.1;
+
+      // C. Récupération des montants liés à la promotion
+      const discountAmount = Number(promo.discountAmount || 0); // Réduction client
+      const partnerCommissionAmount = Number(calculatedCommission || 0); // Commission partenaire
+
+      // D. CALCUL DU PLATFORM DEBT (Ce que le fournisseur doit reverser)
+      // Formule : (Marge Produits + 10% Livraison) - Réduction Client
+      // EXPLICATION : Le fournisseur a encaissé "Prix Public - Réduction". 
+      // On doit donc déduire cette réduction de ce qu'on lui réclame, sinon il la paie de sa poche.
+      const calculatedPlatformDebt = Math.round(totalProductMargin + deliveryMargin - discountAmount);
+
+      // E. CALCUL DU PLATFORM GAIN (Profit net réel de la plateforme)
+      // Formule : Debt (ce qu'on récupère) - Commission (ce qu'on reverse au partenaire)
+      // Ce calcul est valable avec OU sans code promo (si pas de promo, discount et commission = 0)
+      const calculatedNetPlatformGain = Math.round(calculatedPlatformDebt - partnerCommissionAmount);
 
       const orderData = {
         code: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
@@ -295,7 +301,7 @@ const Checkout = () => {
           notes: formData.notes || '',
           deliveryDistance: formData.deliveryDistance || 0,
           deliveryFee: formData.deliveryFee || 0,
-          discount: promo.discountAmount || 0,
+          discount: discountAmount,
           subTotal: cartTotal,
           finalTotal: finalTotal + formData.deliveryFee,
           scheduledDate: formData.scheduledDate || null,
@@ -312,22 +318,28 @@ const Checkout = () => {
           supplierName: item.supplierName || '',
           supplierPrice: item.supplierPrice || 0
         })),
+        
+        // Bloc promo existant (inchangé pour compatibilité)
         promo: promo.code ? {
           code: promo.code,
-          discountAmount: promo.discountAmount || 0,
+          discountAmount: discountAmount,
           partnerId: promo.partnerId || null,
           partnerName: promo.partnerName || '',
           partnerLevel: promo.partnerLevel || 'Standard',
-          partnerCommission: calculatedCommission,
-          platformGain: calculatedPlatformGain,
+          partnerCommission: partnerCommissionAmount,
+          platformGain: calculatedNetPlatformGain, // Mis à jour avec le bon calcul net
           status: 'pending',
           appliedAt: serverTimestamp()
         } : null,
+
         supplierId: cartItems[0]?.supplierId || null,
         supplierName: cartItems[0]?.supplierName || 'Délices d\'Afrique',
         
-        // ✅ DETTE PLATEFORME CALCULÉE ET STOCKÉE
-        platformDebt: platformDebt,
+        // ✅ CORRECTION : La dette prend maintenant en compte la réduction client
+        platformDebt: calculatedPlatformDebt,
+
+        // ✅ AJOUT : Le gain plateforme est maintenant accessible globalement (hors promo)
+        platformGain: calculatedNetPlatformGain,
         
         payment: {
           method: formData.paymentMethod,
@@ -353,43 +365,8 @@ const Checkout = () => {
       const docRef = await addDoc(collection(db, 'orders'), orderData);
       
       console.log('✅ Commande créée avec succès:', docRef.id);
-
-      // MISE À JOUR DES STATS PARTENAIRE
-      if (promo.partnerId) {
-        try {
-          const partnerRef = doc(db, 'partners', promo.partnerId);
-          const partnerSnap = await getDoc(partnerRef);
-          
-          if (partnerSnap.exists()) {
-            const partnerData = partnerSnap.data();
-            const currentSales = partnerData.totalSales || 0;
-            const newTotalSales = currentSales + 1;
-
-            let newLevel = partnerData.level || 'Standard';
-            if (newTotalSales >= 150) {
-              newLevel = 'Premium';
-            } else if (newTotalSales >= 30) {
-              newLevel = 'Actif';
-            } else {
-              newLevel = 'Standard';
-            }
-
-            const updatePayload = { totalSales: increment(1) };
-            if (newLevel !== partnerData.level) {
-              updatePayload.level = newLevel;
-              console.log(`🎉 ${promo.partnerName || promo.partnerId} → ${newLevel} (${newTotalSales} ventes)`);
-            }
-
-            await updateDoc(partnerRef, updatePayload);
-            console.log(`✅ Stats partenaire mises à jour: ${promo.partnerName || promo.partnerId} (+1 vente, niveau: ${newLevel})`);
-            
-          } else {
-            console.error(`❌ Partenaire ${promo.partnerId} introuvable`);
-          }
-        } catch (error) {
-          console.error('❌ Erreur mise à jour stats partenaire:', error);
-        }
-      }
+      console.log(`💰 Dette Fournisseur: ${calculatedPlatformDebt} FCFA | Gain Net Plateforme: ${calculatedNetPlatformGain} FCFA`);
+      
       
       clearCart();
       setCalculatedCommission(0);

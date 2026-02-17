@@ -153,8 +153,8 @@ export const VALIDATION_RULES = {
     ERROR_MSG: "Numéro invalide (doit commencer par 06, 05 ou 04 et contenir 9 chiffres au total)"
   },
   PROMO_CODE: {
-    LENGTH: 8, // DA-XXX-XX = 8 caractères
-    REGEX: /^DA-[A-Z0-9]{3}-[A-Z0-9]{2}$/, // Format strict DA-XXX-XX
+    LENGTH: 10, // DA-XXX-XXX = 10 caractères
+    REGEX: /^DA-[A-Z0-9]{3}-[A-Z0-9]{3}$/, // Format strict DA-XXX-XXX
     PREFIX: 'DA',
     ERROR_MSG: "Le code promo doit être au format DA-XXX-XX (ex: DA-A1B-C2)"
   },

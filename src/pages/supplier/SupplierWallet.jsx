@@ -7,13 +7,46 @@ import {
 import { 
   Wallet, TrendingUp, Send, Clock, CheckCircle, 
   AlertTriangle, History, DollarSign, FileText, Package,
-  ArrowUpRight, ArrowDownRight, Info, Truck, PieChart,
-  TrendingDown, BarChart3, Zap, Target, Calendar,
-  ArrowRight, Eye, Award, Sparkles, CircleDollarSign
+  Truck, PieChart, BarChart3, Zap, Target,
+  Award, Sparkles, X, ZoomIn, ArrowUpRight, ArrowDownLeft
 } from 'lucide-react';
 import { useConfig } from '../../context/ConfigContext';
-import { motion } from 'framer-motion';
-import {WITHDRAWAL_STATUS,ORDER_STATUS,DELIVERY_METHODS} from '../../utils/constants';
+import { ORDER_STATUS, WITHDRAWAL_STATUS } from '../../utils/constants';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- COMPOSANT UTILITAIRE POUR L'AFFICHAGE DES MONTANTS (LOGIQUE CORRIGÉE) ---
+const MoneyDisplay = ({ amount, className = "", currency = "F", forceCompact = false }) => {
+  const [showExact, setShowExact] = useState(false);
+  const numericAmount = Number(amount || 0);
+
+  // Logique : Affiche 'k' seulement si >= 10 000 ou si forceCompact est activé
+  // Sinon affiche le montant complet (ex: 2 500)
+  const formatValue = (n) => {
+    if (n >= 1000000) return (n / 1000000).toFixed(2) + ' M'; // Millions
+    if (n >= 10000 || forceCompact) return (n / 1000).toFixed(1) + ' k'; // > 10k ou espace réduit
+    return n.toLocaleString('fr-FR'); // < 10k (ex: 2 000, 9 500)
+  };
+
+  return (
+    <span 
+      onClick={(e) => { e.stopPropagation(); setShowExact(!showExact); }}
+      className={`cursor-pointer select-none transition-all active:scale-95 inline-flex items-baseline gap-1 ${className}`}
+      title="Cliquer pour voir le montant exact"
+    >
+      {showExact ? (
+        <span className="font-mono tracking-tight">
+          {numericAmount.toLocaleString('fr-FR')} 
+          <span className="text-[0.7em] ml-0.5 opacity-70">{currency}</span>
+        </span>
+      ) : (
+        <span className="font-mono tracking-tight">
+          {formatValue(numericAmount)} 
+          <span className="text-[0.7em] ml-0.5 opacity-70">{currency}</span>
+        </span>
+      )}
+    </span>
+  );
+};
 
 const SupplierWallet = () => {
   const { supplier, financialStats } = useOutletContext();
@@ -24,8 +57,10 @@ const SupplierWallet = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // États UI
   const [transactionRef, setTransactionRef] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   // CHARGEMENT DES DONNÉES
   useEffect(() => {
@@ -59,34 +94,30 @@ const SupplierWallet = () => {
     };
   }, [supplier?.id]);
 
-  // CALCULS STATISTIQUES AVANCÉS
+  // CALCULS STATISTIQUES
   const stats = useMemo(() => {
     let unpaidOrders = 0;
-    let paidOrders = 0;
     let deliveredOrders = 0;
     let totalPlatformShare = 0;
     let totalSupplierShare = 0;
 
     orders.forEach(order => {
       const status = order.status;
-      const isDelivered = status === 'Livré' || status === 'Terminé';
+      const isDelivered = status === ORDER_STATUS.SHIPPING || status === ORDER_STATUS.DELIVERED || status === ORDER_STATUS.COMPLETED;
       
       if (isDelivered) {
         deliveredOrders++;
         
-        if (order.settlementStatus !== 'paid') {
+        if (order.settlementStatus !== WITHDRAWAL_STATUS.PAID) {
           unpaidOrders++;
-        } else {
-          paidOrders++;
         }
 
-        // Calcul des parts
         const platformDebt = Number(order.platformDebt || 0);
         totalPlatformShare += platformDebt;
 
         const items = order.items || [];
         items.forEach(item => {
-          const buyingPrice = Number(item.buyingPrice || item.supplierPrice || 0);
+          const buyingPrice = Number(item.supplierPrice || 0);
           const quantity = Number(item.quantity || 0);
           totalSupplierShare += buyingPrice * quantity;
         });
@@ -106,7 +137,6 @@ const SupplierWallet = () => {
       productEarnings: financialStats.productEarnings,
       deliveryEarnings: financialStats.deliveryEarnings,
       unpaidOrders,
-      paidOrders,
       deliveredOrders,
       totalOrders: orders.length,
       totalPlatformShare,
@@ -119,26 +149,19 @@ const SupplierWallet = () => {
     };
   }, [orders, financialStats]);
 
-  // PRÉDICTIONS MENSUELLES
+  // PRÉDICTIONS
   const predictions = useMemo(() => {
     if (stats.deliveredOrders === 0) return null;
-
     const avgPerOrder = stats.avgSupplierEarning;
-    
-    // Estimation basée sur la moyenne actuelle
-    const conservativeMonthly = avgPerOrder * 60; // 2 commandes/jour
-    const averageMonthly = avgPerOrder * 90; // 3 commandes/jour
-    const optimisticMonthly = avgPerOrder * 150; // 5 commandes/jour
-
     return {
-      conservative: conservativeMonthly,
-      average: averageMonthly,
-      optimistic: optimisticMonthly,
+      conservative: avgPerOrder * 60,
+      average: avgPerOrder * 90,
+      optimistic: avgPerOrder * 150,
       avgPerOrder
     };
   }, [stats]);
 
-  // DÉCLARATION DE PAIEMENT
+  // PAIEMENT
   const handleDeclarePayment = async (e) => {
     e.preventDefault();
     if (!transactionRef.trim() || stats.platformDebt <= 0) return;
@@ -155,298 +178,242 @@ const SupplierWallet = () => {
         type: 'settlement',
         context: 'manual_payment'
       });
-
       setTransactionRef('');
       setActiveTab('history');
-      
     } catch (error) {
       console.error("Erreur paiement:", error);
-      alert("Erreur lors de l'envoi. Vérifiez votre connexion.");
+      alert("Erreur lors de l'envoi.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const hasPendingSettlement = settlements.some(s => s.status === 'pending');
+  const hasPendingSettlement = settlements.some(s => s.status === WITHDRAWAL_STATUS.PENDING);
 
   if (loading) {
     return (
-      <div className="p-8 flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-7xl mx-auto space-y-6 pb-24"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="container-premium mx-auto space-y-4 md:space-y-6 pb-20 md:pb-8"
     >
       
       {/* ========================================
-          EN-TÊTE HERO - Vue d'ensemble financière
+          1. HERO SECTION (Responsive Grid)
           ======================================== */}
-      <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-pink-700 rounded-3xl p-6 sm:p-8 text-white shadow-elegant-lg border border-purple-500/30 relative overflow-hidden">
-        <div className="grain-texture absolute inset-0"></div>
+      <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-5 md:p-8 text-white shadow-elegant border border-white/10 relative overflow-hidden">
+        <div className="grain-texture absolute inset-0 opacity-50"></div>
         
         <div className="relative z-10">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2 flex items-center gap-3">
-                <Wallet size={36}/>
-                Portefeuille & Finances
+              <h1 className="text-2xl md:text-4xl font-display font-bold flex items-center gap-3">
+                <div className="bg-purple-500/20 p-2 rounded-xl border border-purple-500/30">
+                  <Wallet className="w-6 h-6 md:w-8 md:h-8 text-purple-300"/>
+                </div>
+                Portefeuille
               </h1>
-              <p className="text-purple-200">Suivez vos revenus et gérez vos paiements</p>
+              <p className="text-slate-400 text-sm md:text-base mt-1">Gérez vos revenus et transactions</p>
             </div>
-            <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20">
-              <Award className="text-yellow-300" size={20}/>
-              <span className="font-bold">Fournisseur Actif</span>
+            
+            {/* Badge Status */}
+            <div className="self-start md:self-center flex items-center gap-2 bg-emerald-500/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/20">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <span className="text-emerald-400 text-xs md:text-sm font-bold uppercase tracking-wide">Compte Actif</span>
             </div>
           </div>
           
-          {/* STATISTIQUES RAPIDES */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all">
-              <p className="text-xs text-purple-200 mb-1 flex items-center gap-1">
-                <Package size={14}/>
-                Total commandes
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold">{stats.totalOrders}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all">
-              <p className="text-xs text-purple-200 mb-1 flex items-center gap-1">
-                <CheckCircle size={14}/>
-                Livrées
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-green-300">{stats.deliveredOrders}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all">
-              <p className="text-xs text-purple-200 mb-1 flex items-center gap-1">
-                <Clock size={14}/>
-                Non réglées
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-orange-300">{stats.unpaidOrders}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all">
-              <p className="text-xs text-purple-200 mb-1 flex items-center gap-1">
-                <DollarSign size={14}/>
-                Moyenne/commande
-              </p>
-              <p className="text-xl sm:text-2xl font-bold text-yellow-300">{Math.round(stats.avgSupplierEarning).toLocaleString()} F</p>
-            </div>
+          {/* STATS CARDS GRID */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+            {[
+              { label: 'Commandes', val: stats.totalOrders, icon: Package, color: 'text-white' },
+              { label: 'Livrées', val: stats.deliveredOrders, icon: CheckCircle, color: 'text-emerald-400' },
+              { label: 'Non réglées', val: stats.unpaidOrders, icon: Clock, color: 'text-orange-400' },
+              { label: 'Moyenne/Cmd', val: <MoneyDisplay amount={Math.round(stats.avgSupplierEarning)} />, icon: TrendingUp, color: 'text-yellow-400' }
+            ].map((stat, idx) => (
+              <div key={idx} className="bg-white/5 backdrop-blur-sm p-3 md:p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 mb-2 text-slate-400">
+                  <stat.icon size={14} className="md:w-4 md:h-4"/>
+                  <span className="text-[10px] md:text-xs uppercase tracking-wider font-semibold">{stat.label}</span>
+                </div>
+                <div className={`text-lg md:text-2xl lg:text-3xl font-bold font-display ${stat.color}`}>
+                  {stat.val}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* ========================================
-          NAVIGATION PAR ONGLETS
+          2. NAVIGATION (Sticky Mobile Scroll)
           ======================================== */}
-      <div className="flex gap-2 bg-slate-800 p-2 rounded-xl shadow-elegant border border-slate-700 overflow-x-auto no-scrollbar">
-        {[
-          { id: 'overview', label: 'Vue d\'ensemble', icon: PieChart },
-          { id: 'predictions', label: 'Prévisions', icon: TrendingUp },
-          { id: 'pay', label: 'Régulariser', icon: Send },
-          { id: 'history', label: 'Historique', icon: History },
-          { id: 'details', label: 'Détails', icon: FileText }
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all ${
-              activeTab === tab.id 
-                ? 'bg-purple-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-            }`}
-          >
-            <tab.icon size={18}/>
-            <span className="text-sm">{tab.label}</span>
-          </button>
-        ))}
+      <div className="sticky top-[4rem] md:top-20 z-40 -mx-4 md:mx-0 px-4 md:px-0 bg-slate-900/80 backdrop-blur-xl md:bg-transparent md:backdrop-filter-none py-2 md:py-0">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 snap-x">
+          {[
+            { id: 'overview', label: 'Aperçu', icon: PieChart },
+            { id: 'details', label: 'Commandes', icon: FileText },
+            { id: 'predictions', label: 'Futur', icon: Sparkles },
+            { id: 'pay', label: 'Régler', icon: Send },
+            { id: 'history', label: 'Historique', icon: History },
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border ${
+                activeTab === tab.id 
+                  ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-900/20' 
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ========================================
-          CONTENU DES ONGLETS
+          3. CONTENU DES ONGLETS
           ======================================== */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-elegant overflow-hidden">
+      <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden shadow-elegant min-h-[400px]">
         
-        {/* ONGLET: VUE D'ENSEMBLE */}
+        {/* --- A. APERÇU (OVERVIEW) --- */}
         {activeTab === 'overview' && (
-          <div className="p-6 space-y-6">
-            {/* Répartition des revenus - Visual */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-4 md:p-8 space-y-6 md:space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
               
-              {/* Vos gains totaux */}
-              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 p-6 rounded-2xl">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/40">
-                    <TrendingUp className="text-green-400" size={28}/>
-                  </div>
-                  <span className="text-xs font-bold bg-green-500/10 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30">
-                    Vos revenus
-                  </span>
+              {/* Carte REVENUS (Verte) */}
+              <div className="relative group overflow-hidden bg-gradient-to-br from-emerald-900/20 to-slate-900 border border-emerald-500/20 rounded-2xl p-5 md:p-6 transition-all hover:border-emerald-500/40">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <TrendingUp size={100} />
                 </div>
-                <p className="text-sm text-slate-400 mb-2">Gains totaux cumulés</p>
-                <p className="text-4xl font-bold text-green-400 mb-4">
-                  {stats.totalSupplierEarnings.toLocaleString()} <span className="text-2xl">FCFA</span>
-                </p>
-                
-                <div className="space-y-3 pt-4 border-t border-green-500/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300 flex items-center gap-2">
-                      <Package size={16} className="text-green-400"/>
-                      Gains produits
-                    </span>
-                    <span className="font-bold text-green-400">{stats.productEarnings.toLocaleString()} F</span>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
+                      <Wallet size={20} />
+                    </div>
+                    <h3 className="text-emerald-400 font-bold uppercase text-xs tracking-wider">Vos Revenus Nets</h3>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300 flex items-center gap-2">
-                      <Truck size={16} className="text-green-400"/>
-                      Gains livraison
-                    </span>
-                    <span className="font-bold text-green-400">{stats.deliveryEarnings.toLocaleString()} F</span>
+                  <div className="text-3xl md:text-5xl font-display font-bold text-white mb-6">
+                    <MoneyDisplay amount={stats.totalSupplierEarnings} />
+                  </div>
+                  
+                  {/* Détails revenus */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
+                      <p className="text-xs text-slate-400 mb-1 flex items-center gap-1"><Package size={10}/> Ventes Produits</p>
+                      <p className="text-sm md:text-lg font-bold text-slate-200"><MoneyDisplay amount={stats.productEarnings} /></p>
+                    </div>
+                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
+                      <p className="text-xs text-slate-400 mb-1 flex items-center gap-1"><Truck size={10}/> Livraisons</p>
+                      <p className="text-sm md:text-lg font-bold text-slate-200"><MoneyDisplay amount={stats.deliveryEarnings} /></p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Dette plateforme */}
-              <div className={`border-2 p-6 rounded-2xl ${
+              {/* Carte DETTE (Rouge/Neutre) */}
+              <div className={`relative overflow-hidden rounded-2xl p-5 md:p-6 border transition-all ${
                 stats.platformDebt > 0 
-                  ? 'bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30'
-                  : 'bg-gradient-to-br from-slate-700/30 to-slate-600/30 border-slate-600'
+                  ? 'bg-gradient-to-br from-red-900/20 to-slate-900 border-red-500/30 hover:border-red-500/50'
+                  : 'bg-slate-800/50 border-slate-600'
               }`}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl border ${
-                    stats.platformDebt > 0
-                      ? 'bg-red-500/20 border-red-500/40'
-                      : 'bg-slate-600 border-slate-500'
-                  }`}>
-                    {stats.platformDebt > 0 ? (
-                      <AlertTriangle className="text-red-400" size={28}/>
-                    ) : (
-                      <CheckCircle className="text-green-400" size={28}/>
-                    )}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${stats.platformDebt > 0 ? 'bg-red-500/20 text-red-400' : 'bg-slate-600 text-slate-300'}`}>
+                      {stats.platformDebt > 0 ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>}
+                    </div>
+                    <h3 className={`font-bold uppercase text-xs tracking-wider ${stats.platformDebt > 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                      Dette Plateforme
+                    </h3>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${
-                    stats.platformDebt > 0
-                      ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                      : 'bg-green-500/10 text-green-400 border-green-500/30'
-                  }`}>
-                    {stats.platformDebt > 0 ? 'À régler' : 'Réglé'}
-                  </span>
+                  {stats.platformDebt > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
+                      ACTION REQUISE
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm text-slate-400 mb-2">Dette envers la plateforme</p>
-                <p className={`text-4xl font-bold mb-4 ${
-                  stats.platformDebt > 0 ? 'text-red-400' : 'text-slate-400'
-                }`}>
-                  {stats.platformDebt.toLocaleString()} <span className="text-2xl">FCFA</span>
-                </p>
                 
+                <div className={`text-3xl md:text-5xl font-display font-bold mb-6 ${stats.platformDebt > 0 ? 'text-white' : 'text-slate-500'}`}>
+                  <MoneyDisplay amount={stats.platformDebt} />
+                </div>
+
                 {stats.platformDebt > 0 ? (
-                  <button
+                  <button 
                     onClick={() => setActiveTab('pay')}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg shadow-red-900/20"
                   >
-                    <Send size={18}/>
-                    Régulariser maintenant
+                    <Send size={16}/> Régler maintenant
                   </button>
                 ) : (
-                  <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-xl flex items-center gap-2">
-                    <CheckCircle className="text-green-400" size={20}/>
-                    <span className="text-sm text-green-400 font-medium">Aucune dette en cours</span>
+                  <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+                    <CheckCircle size={16}/>
+                    <span className="text-sm font-medium">Vous êtes à jour !</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Graphique de répartition */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600 p-6 rounded-2xl">
-              <h3 className="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-                <PieChart size={24} className="text-purple-400"/>
-                Répartition des revenus totaux
+            {/* Section Graphique Simplifiée */}
+            <div className="bg-slate-900/50 rounded-2xl p-5 md:p-6 border border-slate-700">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <PieChart className="text-purple-400" size={20}/> Répartition du Chiffre d'Affaires
               </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                {/* Visual Chart */}
-                <div className="relative h-64 flex items-center justify-center">
-                  <svg viewBox="0 0 200 200" className="w-full h-full max-w-xs">
-                    {/* Background circle */}
-                    <circle cx="100" cy="100" r="80" fill="none" stroke="#334155" strokeWidth="40"/>
-                    
-                    {/* Supplier share (green) */}
+              
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* SVG Chart Responsive */}
+                <div className="relative w-48 h-48 md:w-56 md:h-56 shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1e293b" strokeWidth="12" />
+                    {/* Segment Supplier */}
                     <circle 
-                      cx="100" 
-                      cy="100" 
-                      r="80" 
-                      fill="none" 
-                      stroke="#10b981" 
-                      strokeWidth="40"
-                      strokeDasharray={`${stats.supplierSharePercentage * 5.02} 502`}
-                      transform="rotate(-90 100 100)"
-                      className="transition-all duration-1000"
+                      cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="12"
+                      strokeDasharray={`${stats.supplierSharePercentage * 2.51} 251`}
+                      className="transition-all duration-1000 ease-out"
                     />
-                    
-                    {/* Platform share (purple) */}
+                    {/* Segment Platform */}
                     <circle 
-                      cx="100" 
-                      cy="100" 
-                      r="80" 
-                      fill="none" 
-                      stroke="#8b5cf6" 
-                      strokeWidth="40"
-                      strokeDasharray={`${stats.platformSharePercentage * 5.02} 502`}
-                      strokeDashoffset={`-${stats.supplierSharePercentage * 5.02}`}
-                      transform="rotate(-90 100 100)"
-                      className="transition-all duration-1000"
+                      cx="50" cy="50" r="40" fill="transparent" stroke="#8b5cf6" strokeWidth="12"
+                      strokeDasharray={`${stats.platformSharePercentage * 2.51} 251`}
+                      strokeDashoffset={`-${stats.supplierSharePercentage * 2.51}`}
+                      className="transition-all duration-1000 ease-out"
                     />
-                    
-                    {/* Center text */}
-                    <text x="100" y="95" textAnchor="middle" className="text-xs fill-slate-400">
-                      Total
-                    </text>
-                    <text x="100" y="115" textAnchor="middle" className="text-lg font-bold fill-slate-200">
-                      {stats.totalRevenue.toLocaleString()}
-                    </text>
                   </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xs text-slate-400">Total</span>
+                    <span className="text-sm font-bold text-white"><MoneyDisplay amount={stats.totalRevenue} forceCompact={true} /></span>
+                  </div>
                 </div>
 
                 {/* Légende */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                  <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-green-500 rounded"></div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-300">Votre part</p>
-                        <p className="text-xs text-slate-500">{stats.deliveredOrders} commandes</p>
-                      </div>
+                      <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                      <span className="text-sm text-slate-300">Votre Part</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-green-400">{stats.supplierSharePercentage.toFixed(1)}%</p>
-                      <p className="text-sm text-slate-400">{stats.totalSupplierShare.toLocaleString()} F</p>
+                      <div className="text-lg font-bold text-emerald-400">{stats.supplierSharePercentage.toFixed(0)}%</div>
+                      <div className="text-xs text-slate-400"><MoneyDisplay amount={stats.totalSupplierShare} /></div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                  <div className="flex items-center justify-between p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-300">Part plateforme</p>
-                        <p className="text-xs text-slate-500">Commissions & marketing</p>
-                      </div>
+                      <div className="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+                      <span className="text-sm text-slate-300">Plateforme</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-purple-400">{stats.platformSharePercentage.toFixed(1)}%</p>
-                      <p className="text-sm text-slate-400">{stats.totalPlatformShare.toLocaleString()} F</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-700/30 border border-slate-600 p-4 rounded-xl">
-                    <div className="flex items-start gap-2">
-                      <Info className="text-blue-400 shrink-0 mt-0.5" size={16}/>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        La plateforme prend en charge le marketing, la technologie, et le support client. 
-                        Vous gardez la majorité des revenus.
-                      </p>
+                      <div className="text-lg font-bold text-purple-400">{stats.platformSharePercentage.toFixed(0)}%</div>
+                      <div className="text-xs text-slate-400"><MoneyDisplay amount={stats.totalPlatformShare} /></div>
                     </div>
                   </div>
                 </div>
@@ -455,450 +422,337 @@ const SupplierWallet = () => {
           </div>
         )}
 
-        {/* ONGLET: PRÉVISIONS */}
-        {activeTab === 'predictions' && (
-          <div className="p-6 space-y-6">
-            <div className="flex items-start gap-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 p-5 rounded-xl mb-6">
-              <Sparkles className="text-purple-400 shrink-0" size={24}/>
-              <div>
-                <h3 className="text-lg font-bold text-purple-400 mb-2">Potentiel de revenus</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  Basé sur votre moyenne actuelle de <strong className="text-purple-400">{Math.round(stats.avgSupplierEarning).toLocaleString()} FCFA</strong> par commande,
-                  voici vos projections mensuelles selon différents scénarios.
-                </p>
-              </div>
-            </div>
-
-            {predictions ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Scénario Conservateur */}
-                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 p-6 rounded-2xl hover:-translate-y-1 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="bg-blue-500/20 p-3 rounded-xl border border-blue-500/40">
-                      <Target className="text-blue-400" size={24}/>
-                    </div>
-                    <span className="text-xs font-bold bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-full border border-blue-500/30">
-                      Conservateur
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400 mb-2">~60 commandes/mois</p>
-                  <p className="text-xs text-slate-500 mb-3">(2 commandes/jour)</p>
-                  <p className="text-3xl font-bold text-blue-400 mb-4">
-                    {Math.round(predictions.conservative).toLocaleString()} <span className="text-lg">F</span>
-                  </p>
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
-                    <p className="text-xs text-blue-300">Revenus mensuels estimés</p>
-                  </div>
-                </div>
-
-                {/* Scénario Moyen */}
-                <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 p-6 rounded-2xl hover:-translate-y-1 transition-all ring-2 ring-green-500/20">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/40">
-                      <TrendingUp className="text-green-400" size={24}/>
-                    </div>
-                    <span className="text-xs font-bold bg-green-500/10 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30 flex items-center gap-1">
-                      <Award size={12}/>
-                      Réaliste
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400 mb-2">~90 commandes/mois</p>
-                  <p className="text-xs text-slate-500 mb-3">(3 commandes/jour)</p>
-                  <p className="text-3xl font-bold text-green-400 mb-4">
-                    {Math.round(predictions.average).toLocaleString()} <span className="text-lg">F</span>
-                  </p>
-                  <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
-                    <p className="text-xs text-green-300">Scénario le plus probable</p>
-                  </div>
-                </div>
-
-                {/* Scénario Optimiste */}
-                <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 p-6 rounded-2xl hover:-translate-y-1 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="bg-orange-500/20 p-3 rounded-xl border border-orange-500/40">
-                      <Zap className="text-orange-400" size={24}/>
-                    </div>
-                    <span className="text-xs font-bold bg-orange-500/10 text-orange-400 px-3 py-1.5 rounded-full border border-orange-500/30">
-                      Optimiste
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400 mb-2">~150 commandes/mois</p>
-                  <p className="text-xs text-slate-500 mb-3">(5 commandes/jour)</p>
-                  <p className="text-3xl font-bold text-orange-400 mb-4">
-                    {Math.round(predictions.optimistic).toLocaleString()} <span className="text-lg">F</span>
-                  </p>
-                  <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-lg">
-                    <p className="text-xs text-orange-300">Fort potentiel de croissance</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <BarChart3 size={48} className="mx-auto mb-4 text-slate-600"/>
-                <p className="text-slate-400 font-medium">Pas assez de données pour générer des prévisions</p>
-                <p className="text-sm text-slate-500 mt-2">Complétez quelques commandes pour voir vos projections</p>
-              </div>
-            )}
-
-            {/* Comment augmenter vos revenus */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600 p-6 rounded-2xl">
-              <h3 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <Sparkles className="text-yellow-400" size={24}/>
-                Comment augmenter vos revenus
+        {/* --- B. COMMANDES (DETAILS) - RESPONSIVE LIST --- */}
+        {activeTab === 'details' && (
+          <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+              <h3 className="font-bold text-white flex items-center gap-2 text-lg">
+                <FileText className="text-purple-400" size={20}/>
+                Détail des Livraisons
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-xl">
-                  <h4 className="font-bold text-purple-400 mb-2 flex items-center gap-2">
-                    <Package size={18}/>
-                    Diversifiez vos produits
-                  </h4>
-                  <p className="text-sm text-slate-300">
-                    Plus vous avez de produits populaires, plus vous attirez de clients différents.
-                  </p>
-                </div>
-                <div className="bg-green-500/10 border border-green-500/30 p-4 rounded-xl">
-                  <h4 className="font-bold text-green-400 mb-2 flex items-center gap-2">
-                    <Clock size={18}/>
-                    Livraison rapide
-                  </h4>
-                  <p className="text-sm text-slate-300">
-                    Traitez les commandes rapidement pour obtenir de meilleures notes et plus de visibilité.
-                  </p>
-                </div>
-                <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl">
-                  <h4 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
-                    <TrendingUp size={18}/>
-                    Prix compétitifs
-                  </h4>
-                  <p className="text-sm text-slate-300">
-                    Proposez des tarifs attractifs tout en maintenant votre marge.
-                  </p>
-                </div>
-                <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-xl">
-                  <h4 className="font-bold text-orange-400 mb-2 flex items-center gap-2">
-                    <Award size={18}/>
-                    Qualité constante
-                  </h4>
-                  <p className="text-sm text-slate-300">
-                    Maintenez une qualité excellente pour fidéliser votre clientèle.
-                  </p>
-                </div>
+              <div className="text-sm text-slate-400">
+                {stats.deliveredOrders} commande(s) trouvée(s)
               </div>
             </div>
-          </div>
-        )}
+            
+            <div className="space-y-4">
+              {orders
+                .filter(o => o.status === 'Livré' || o.status === 'Terminé' || o.status === 'En livraison')
+                .map(order => {
+                  const items = order.items || [];
+                  const firstImage = items[0]?.image || 'https://placehold.co/100?text=IMG';
+                  const deliveryFee = Number(order.details?.deliveryFee || 0);
+                  const supplierDeliveryGain = deliveryFee * 0.9;
+                  
+                  // Calcul du gain total pour cette commande
+                  let productsGain = 0;
+                  items.forEach(item => {
+                    const price = Number(item.buyingPrice || item.supplierPrice || 0);
+                    productsGain += price * Number(item.quantity || 0);
+                  });
+                  const totalGain = productsGain + supplierDeliveryGain;
+                  const debt = Number(order.platformDebt || 0);
 
-        {/* ONGLET: RÉGULARISER */}
-        {activeTab === 'pay' && (
-          <div>
-            {stats.platformDebt > 0 ? (
-              <div className="p-6 space-y-6">
-                <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border-2 border-red-500/30 p-6 rounded-xl">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="bg-red-500/20 p-3 rounded-xl border border-red-500/40">
-                      <AlertTriangle className="text-red-400" size={28}/>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-red-400 mb-2">Dette à régulariser</h3>
-                      <p className="text-3xl font-bold text-slate-100 mb-2">
-                        {stats.platformDebt.toLocaleString()} FCFA
-                      </p>
-                      <p className="text-sm text-slate-300">
-                        Cette dette correspond à la commission plateforme sur vos ventes livrées non réglées.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  return (
+                    <div key={order.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 hover:border-purple-500/50 transition-all group">
+                      <div className="flex flex-col md:flex-row gap-4">
+                        {/* 1. Info Principale & Image */}
+                        <div className="flex gap-4 md:w-1/3">
+                          <div 
+                            className="relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden shrink-0 border border-slate-700 cursor-pointer group-hover:scale-105 transition-transform"
+                            onClick={() => setPreviewImage(firstImage)}
+                          >
+                            <img src={firstImage} alt="" className="w-full h-full object-cover"/>
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <ZoomIn size={16} className="text-white"/>
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-purple-400">#{order.code}</span>
+                              <span className="text-xs text-slate-500">• {new Date(order.createdAt?.seconds * 1000).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-xs text-slate-300 truncate mb-2">{items.length} article(s)</p>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide border ${
+                              order.settlementStatus === 'paid' 
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                              : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                            }`}>
+                              {order.settlementStatus === 'paid' ? 'Payé' : 'En attente règlement'}
+                            </span>
+                          </div>
+                        </div>
 
-                {/* Instructions de paiement */}
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 p-6 rounded-xl border-2 border-blue-500/20">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg">
-                        1
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-blue-400 mb-3 text-lg">Effectuez le paiement par Mobile Money</p>
-                        <div className="bg-slate-800/50 p-5 rounded-lg border border-blue-500/20">
-                          <p className="text-slate-300 mb-4 text-base">
-                            Envoyez exactement <strong className="text-blue-400 text-xl">{stats.platformDebt.toLocaleString()} FCFA</strong> au numéro :
-                          </p>
-                          <div className="bg-slate-700/50 px-6 py-4 rounded-lg border border-blue-500/20 text-center">
-                            <p className="text-xs text-slate-500 uppercase font-bold mb-2">Numéro de paiement</p>
-                            <p className="font-mono font-bold text-3xl text-slate-200">
-                              {config?.phoneNumber}
-                            </p>
+                        {/* 2. Détails Financiers (Responsive Grid inside Card) */}
+                        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                          <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Votre Gain Net</p>
+                            <div className="text-sm md:text-base font-bold text-emerald-400">
+                              <MoneyDisplay amount={totalGain} />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Commission</p>
+                            <div className={`text-sm md:text-base font-bold ${debt > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                               {debt > 0 ? '-' : ''}<MoneyDisplay amount={debt} />
+                            </div>
+                          </div>
+
+                          <div className="col-span-2 md:col-span-1 border-t md:border-t-0 md:border-l border-slate-700 pt-2 md:pt-0 md:pl-3 mt-1 md:mt-0 flex md:flex-col justify-between items-center md:items-start">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold">Total Client</p>
+                            <div className="text-sm font-bold text-slate-300">
+                              <MoneyDisplay amount={order.details?.finalTotal} />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  );
+              })}
+              
+              {orders.length === 0 && (
+                <div className="text-center py-12 text-slate-500">
+                  <Package className="mx-auto w-12 h-12 mb-3 opacity-20"/>
+                  <p>Aucune commande pour le moment.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6 rounded-xl border-2 border-green-500/20">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg">
-                        2
+        {/* --- C. PRÉVISIONS --- */}
+        {activeTab === 'predictions' && (
+           <div className="p-4 md:p-8">
+             <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-4">
+                <Sparkles className="text-purple-400 shrink-0" size={24}/>
+                <div>
+                  <h3 className="font-bold text-purple-100">Projections Mensuelles</h3>
+                  <p className="text-sm text-purple-200/70 mt-1">
+                    Estimations basées sur votre moyenne actuelle de <span className="font-bold text-white"><MoneyDisplay amount={Math.round(stats.avgSupplierEarning)} /></span> par commande livrée.
+                  </p>
+                </div>
+             </div>
+
+             {predictions ? (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 {[
+                   { title: 'Conservateur', orders: 60, val: predictions.conservative, color: 'blue', icon: Target },
+                   { title: 'Standard', orders: 90, val: predictions.average, color: 'emerald', icon: TrendingUp },
+                   { title: 'Optimiste', orders: 150, val: predictions.optimistic, color: 'amber', icon: Zap },
+                 ].map((p, i) => (
+                   <div key={i} className={`p-6 rounded-2xl border bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center text-center relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300
+                      ${p.color === 'blue' ? 'border-blue-500/30 hover:border-blue-500' : ''}
+                      ${p.color === 'emerald' ? 'border-emerald-500/30 hover:border-emerald-500' : ''}
+                      ${p.color === 'amber' ? 'border-amber-500/30 hover:border-amber-500' : ''}
+                   `}>
+                      <div className={`p-3 rounded-full mb-4 bg-${p.color}-500/10 text-${p.color}-400`}>
+                        <p.icon size={24} />
                       </div>
+                      <h4 className={`uppercase text-xs font-bold tracking-widest text-${p.color}-400 mb-2`}>{p.title}</h4>
+                      <div className="text-3xl font-display font-bold text-white mb-2">
+                        <MoneyDisplay amount={p.val} />
+                      </div>
+                      <div className="text-sm text-slate-400 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700">
+                        ~{p.orders} commandes
+                      </div>
+                   </div>
+                 ))}
+               </div>
+             ) : (
+               <div className="text-center py-10 text-slate-500">Pas assez de données pour les prédictions.</div>
+             )}
+           </div>
+        )}
+
+        {/* --- D. RÉGLER (PAY) --- */}
+        {activeTab === 'pay' && (
+          <div className="p-4 md:p-8 max-w-2xl mx-auto">
+             {stats.platformDebt > 0 ? (
+               <div className="space-y-6">
+                 <div className="text-center mb-8">
+                   <div className="inline-block p-4 rounded-full bg-red-500/10 border border-red-500/30 mb-4">
+                     <AlertTriangle size={32} className="text-red-500"/>
+                   </div>
+                   <h2 className="text-2xl font-bold text-white mb-2">Régularisation requise</h2>
+                   <div className="text-4xl font-display font-bold text-red-400 my-4">
+                      <MoneyDisplay amount={stats.platformDebt} />
+                   </div>
+                   <p className="text-slate-400 text-sm">Montant cumulé des commissions sur vos ventes livrées.</p>
+                 </div>
+
+                 <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-6">
+                    {/* Étape 1 */}
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white">1</div>
                       <div className="flex-1">
-                        <p className="font-bold text-green-400 mb-4 text-lg">Saisissez l'ID de transaction</p>
-                        
-                        <form onSubmit={handleDeclarePayment} className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-bold text-slate-300 mb-2">
-                              Référence de transaction Mobile Money
-                            </label>
-                            <input 
-                              required
-                              type="text" 
-                              placeholder="Ex: MP240128.1234.A56789"
-                              className="w-full p-4 bg-slate-800 border-2 border-green-500/20 rounded-xl text-center font-mono uppercase text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all text-slate-200 placeholder-slate-500"
-                              value={transactionRef}
-                              onChange={e => setTransactionRef(e.target.value)}
-                              disabled={hasPendingSettlement}
-                            />
-                          </div>
-                          
+                        <h4 className="font-bold text-white mb-2">Envoyez le montant</h4>
+                        <div className="bg-slate-800 p-4 rounded-xl border border-slate-600 flex justify-between items-center">
+                          <span className="text-slate-400 text-sm">Numéro Mobile Money</span>
+                          <span className="font-mono font-bold text-white text-lg select-all">{config?.phoneNumber || '---'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Étape 2 */}
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white">2</div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-white mb-2">Confirmez le transfert</h4>
+                        <form onSubmit={handleDeclarePayment} className="space-y-3">
+                          <input 
+                            type="text" 
+                            placeholder="ID de Transaction (ex: MP2024...)" 
+                            required
+                            value={transactionRef}
+                            onChange={(e) => setTransactionRef(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-colors"
+                          />
                           <button 
                             type="submit" 
                             disabled={isSubmitting || hasPendingSettlement}
-                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
                           >
                             {isSubmitting ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                Envoi en cours...
-                              </>
-                            ) : hasPendingSettlement ? (
-                              <>
-                                <Clock size={20}/>
-                                Paiement en attente de validation
-                              </>
+                              <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
                             ) : (
                               <>
-                                <Send size={20}/>
-                                Confirmer le paiement
+                                <CheckCircle size={18}/> Confirmer le paiement
                               </>
                             )}
                           </button>
                         </form>
+                        {hasPendingSettlement && (
+                          <p className="text-xs text-orange-400 mt-2 flex items-center gap-1">
+                            <Clock size={12}/> Un paiement est déjà en attente de validation.
+                          </p>
+                        )}
                       </div>
                     </div>
+                 </div>
+               </div>
+             ) : (
+               <div className="flex flex-col items-center justify-center py-12 text-center">
+                 <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 border border-emerald-500/20">
+                    <CheckCircle size={40} className="text-emerald-500"/>
+                 </div>
+                 <h2 className="text-2xl font-bold text-white mb-2">Tout est en ordre</h2>
+                 <p className="text-slate-400 max-w-sm">Vous n'avez aucune dette envers la plateforme actuellement. Continuez à vendre !</p>
+                 <button onClick={() => setActiveTab('details')} className="mt-8 text-purple-400 font-bold hover:text-purple-300">
+                   Voir mes dernières ventes &rarr;
+                 </button>
+               </div>
+             )}
+          </div>
+        )}
+
+        {/* --- E. HISTORIQUE (HISTORY) --- */}
+        {activeTab === 'history' && (
+          <div className="flex flex-col h-full">
+            <div className="p-4 border-b border-slate-700 bg-slate-800/50">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <History size={18}/> Historique des transactions
+              </h3>
+            </div>
+            
+            <div className="p-0">
+              {settlements.length > 0 ? (
+                <div className="flex flex-col">
+                  {/* Header Table (Desktop Only) */}
+                  <div className="hidden md:grid grid-cols-4 gap-4 p-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-700 bg-slate-900/30">
+                    <div>Date</div>
+                    <div>Référence</div>
+                    <div className="text-right">Montant</div>
+                    <div className="text-center">Statut</div>
                   </div>
 
-                  <div className="bg-orange-500/10 border-l-4 border-orange-500 p-5 rounded-r-xl">
-                    <div className="flex items-start gap-3">
-                      <Info className="text-orange-400 shrink-0 mt-0.5" size={22}/>
-                      <div className="text-sm text-slate-300">
-                        <p className="font-bold mb-2 text-orange-400 text-base">Important</p>
-                        <ul className="space-y-1 list-disc list-inside">
-                          <li>Vérifiez le montant exact avant d'envoyer</li>
-                          <li>Copiez correctement la référence de transaction</li>
-                          <li>Votre compte sera réactivé sous 24h après validation</li>
-                        </ul>
+                  {/* Rows */}
+                  <div className="divide-y divide-slate-700">
+                    {settlements.map((s) => (
+                      <div key={s.id} className="p-4 md:grid md:grid-cols-4 md:items-center md:gap-4 hover:bg-slate-700/30 transition-colors flex flex-col gap-3 md:flex-row">
+                        
+                        {/* Mobile: Top Row with Date & Status */}
+                        <div className="flex justify-between items-center md:hidden">
+                           <span className="text-sm text-slate-400">
+                             {s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toLocaleDateString() : '-'}
+                           </span>
+                           <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${
+                             s.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                             s.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                             'bg-amber-500/10 text-amber-400'
+                           }`}>
+                             {s.status === 'approved' ? 'Validé' : s.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                           </span>
+                        </div>
+
+                        {/* Desktop Date */}
+                        <div className="hidden md:block text-sm text-slate-300">
+                          {s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toLocaleDateString() : '-'}
+                        </div>
+
+                        {/* Reference */}
+                        <div className="flex items-center gap-2">
+                           <span className="md:hidden text-xs text-slate-500">Réf:</span>
+                           <code className="bg-slate-900 px-2 py-1 rounded text-xs font-mono text-purple-300 border border-slate-600">
+                             {s.transactionRef}
+                           </code>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="flex justify-between md:justify-end md:text-right font-bold text-white">
+                           <span className="md:hidden text-sm text-slate-400">Montant:</span>
+                           <MoneyDisplay amount={s.amount} />
+                        </div>
+
+                        {/* Desktop Status */}
+                        <div className="hidden md:flex justify-center">
+                           <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                             s.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                             s.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                             'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                           }`}>
+                             {s.status === 'approved' ? 'Validé' : s.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                           </span>
+                        </div>
+
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="p-16 text-center">
-                <CheckCircle size={64} className="mx-auto mb-4 text-green-400"/>
-                <h3 className="text-2xl font-bold text-slate-200 mb-2">Aucune dette en cours</h3>
-                <p className="text-slate-400">Vous n'avez aucune dette envers la plateforme actuellement.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ONGLET: HISTORIQUE */}
-        {activeTab === 'history' && (
-          <div>
-            <div className="p-6 bg-slate-800/50 border-b border-slate-700">
-              <h3 className="font-bold text-slate-200 flex items-center gap-2 text-lg">
-                <History size={22}/>
-                Historique des paiements
-              </h3>
-              <p className="text-sm text-slate-400 mt-1">Tous vos règlements à la plateforme</p>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase border-b border-slate-700">
-                  <tr>
-                    <th className="p-4 font-bold">Date & Heure</th>
-                    <th className="p-4 font-bold">Référence</th>
-                    <th className="p-4 text-right font-bold">Montant</th>
-                    <th className="p-4 text-center font-bold">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {settlements.length > 0 ? (
-                    settlements.map((settlement) => (
-                      <tr key={settlement.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="p-4 text-sm text-slate-300">
-                          {settlement.createdAt?.seconds 
-                            ? new Date(settlement.createdAt.seconds * 1000).toLocaleDateString('fr-FR', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            : '---'}
-                        </td>
-                        <td className="p-4">
-                          <code className="text-sm font-mono font-bold text-purple-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-purple-500/30">
-                            {settlement.transactionRef}
-                          </code>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="text-lg font-bold text-slate-200">
-                            {Number(settlement.amount || settlement.amountDeclared || 0).toLocaleString()}
-                          </span>
-                          <span className="text-xs text-slate-500 ml-1">FCFA</span>
-                        </td>
-                        <td className="p-4 text-center">
-                          {settlement.status === 'pending' && (
-                            <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-500/10 text-yellow-400 text-sm rounded-full font-bold border border-yellow-500/30">
-                              <Clock size={16}/>
-                              En attente
-                            </span>
-                          )}
-                          {settlement.status === 'approved' && (
-                            <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500/10 text-green-400 text-sm rounded-full font-bold border border-green-500/30">
-                              <CheckCircle size={16}/>
-                              Validé
-                            </span>
-                          )}
-                          {settlement.status === 'rejected' && (
-                            <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-500/10 text-red-400 text-sm rounded-full font-bold border border-red-500/30">
-                              <AlertTriangle size={16}/>
-                              Rejeté
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="p-16 text-center">
-                        <FileText size={48} className="mx-auto mb-4 text-slate-600"/>
-                        <p className="text-slate-400 font-medium">Aucun historique de paiement</p>
-                        <p className="text-sm text-slate-500 mt-2">Vos futurs paiements apparaîtront ici</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              ) : (
+                <div className="p-10 text-center text-slate-500">Aucun historique de paiement.</div>
+              )}
             </div>
           </div>
         )}
 
-        {/* ONGLET: DÉTAILS */}
-        {activeTab === 'details' && (
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-200 text-lg flex items-center gap-2">
-                <Package size={22}/>
-                Détail de toutes les commandes livrées
-              </h3>
-              <span className="text-sm text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                {stats.deliveredOrders} commande{stats.deliveredOrders > 1 ? 's' : ''}
-              </span>
-            </div>
-            
-            {orders.filter(o => o.status === 'En livraison' || o.status === 'Livré' || o.status === 'Terminé').length > 0 ? (
-              <div className="space-y-3">
-                {orders
-                  .filter(o => o.status === 'En livraison' || o.status === 'Livré' || o.status === 'Terminé')
-                  .map(order => {
-                    const items = order.items || [];
-                    let supplierGain = 0;
-                    
-                    items.forEach(item => {
-                      const buyingPrice = Number(item.buyingPrice || item.supplierPrice || 0);
-                      const quantity = Number(item.quantity || 0);
-                      supplierGain += buyingPrice * quantity;
-                    });
-                    
-                    const deliveryCost = Number(order.details?.deliveryFee || 0);
-                    const supplierDeliveryGain = deliveryCost * 0.9;
-                    const platformDebt = Number(order.platformDebt || 0);
-                    const totalGain = supplierGain + supplierDeliveryGain;
-                    
-                    return (
-                      <div key={order.id} className="bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600 rounded-xl p-5 hover:shadow-elegant transition-all">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <p className="font-mono font-bold text-purple-400 text-lg">#{order.code}</p>
-                            <p className="text-sm text-slate-400 mt-1">
-                              {order.createdAt?.seconds 
-                                ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('fr-FR', {
-                                    day: '2-digit',
-                                    month: 'long',
-                                    year: 'numeric'
-                                  })
-                                : '---'}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${
-                              order.settlementStatus === 'paid' 
-                                ? 'bg-green-500/10 text-green-400 border border-green-500/30' 
-                                : 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                            }`}>
-                              {order.settlementStatus === 'paid' ? '✓ Réglée' : '⏳ Non réglée'}
-                            </span>
-                            <span className="px-3 py-1 rounded-full text-xs bg-slate-700 text-slate-300 border border-slate-600">
-                              {order.status}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                          <div className="bg-green-500/10 p-4 rounded-xl border border-green-500/30">
-                            <p className="text-xs text-green-400 mb-1 flex items-center gap-1">
-                              <TrendingUp size={14}/>
-                              Vos gains totaux
-                            </p>
-                            <p className="text-xl font-bold text-green-400">{totalGain.toLocaleString()} F</p>
-                          </div>
-                          <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/30">
-                            <p className="text-xs text-red-400 mb-1 flex items-center gap-1">
-                              <AlertTriangle size={14}/>
-                              Dette plateforme
-                            </p>
-                            <p className="text-xl font-bold text-red-400">{platformDebt.toLocaleString()} F</p>
-                          </div>
-                          <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/30">
-                            <p className="text-xs text-blue-400 mb-1 flex items-center gap-1">
-                              <Truck size={14}/>
-                              Frais livraison
-                            </p>
-                            <p className="text-xl font-bold text-blue-400">{deliveryCost.toLocaleString()} F</p>
-                          </div>
-                          <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600">
-                            <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
-                              <CircleDollarSign size={14}/>
-                              Total client
-                            </p>
-                            <p className="text-xl font-bold text-slate-200">{(order.details?.finalTotal || 0).toLocaleString()} F</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <Package size={64} className="mx-auto mb-4 text-slate-600"/>
-                <p className="text-slate-400 font-medium text-lg">Aucune commande livrée</p>
-                <p className="text-sm text-slate-500 mt-2">Vos commandes livrées apparaîtront ici</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* MODAL IMAGE ZOOM */}
+      <AnimatePresence>
+        {previewImage && (
+          <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-lg w-full max-h-[80vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700"
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 z-10"
+              >
+                <X size={20}/>
+              </button>
+              <img src={previewImage} alt="Zoom" className="w-full h-full object-contain" />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

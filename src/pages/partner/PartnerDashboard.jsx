@@ -80,7 +80,7 @@ const PartnerDashboard = () => {
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // ✅ CORRECTION : Filtrer les commandes "Livré" et "Terminé" (selon ta base de données)
-    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED);
+    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.COMPLETED);
 
     // ✅ Gains aujourd'hui
     const todayEarnings = deliveredOrders

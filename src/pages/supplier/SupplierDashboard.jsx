@@ -21,49 +21,71 @@ const SupplierDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [allOrders, setAllOrders] = useState([]);
 
-  // Calculs statistiques avancés
+  // Calculs statistiques avancés (CORRIGÉ)
   const advancedStats = useMemo(() => {
+    // 1. Filtrer uniquement les commandes qui génèrent de l'argent
     const delivered = allOrders.filter(o => 
-      o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED
+      o.status === ORDER_STATUS.SHIPPING ||  
+      o.status === ORDER_STATUS.DELIVERED || 
+      o.status === ORDER_STATUS.COMPLETED
     );
     
-    // Revenus par jour (7 derniers jours)
+    // 2. Fonction ultra-robuste pour lire la date peu importe d'où elle vient
+    const getOrderDate = (createdAt) => {
+      if (!createdAt) return null;
+      if (typeof createdAt.toDate === 'function') return createdAt.toDate(); // Officiel Firestore
+      if (createdAt.seconds) return new Date(createdAt.seconds * 1000);      // Fallback
+      if (createdAt instanceof Date) return createdAt;                       // Date native
+      return new Date(createdAt);                                            // String (imports/mocks)
+    };
+
     const last7Days = [];
+    
+    // 3. Fixer le référentiel à "Aujourd'hui à minuit pile"
     const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+
+    // 4. Boucle sur les 7 derniers jours (de J-6 à Aujourd'hui)
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      // Création d'une copie propre pour la date de début (00:00:00)
+      const dayStart = new Date(today);
+      dayStart.setDate(today.getDate() - i);
       
+      // Création d'une copie propre pour la date de fin (23:59:59)
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      // Filtrer les commandes qui tombent PILE dans cette journée
       const dayOrders = delivered.filter(o => {
-        if (!o.createdAt?.seconds) return false;
-        const orderDate = new Date(o.createdAt.seconds * 1000);
+        const orderDate = getOrderDate(o.createdAt);
+        if (!orderDate) return false;
         return orderDate >= dayStart && orderDate <= dayEnd;
       });
       
+      // Calculer l'argent généré ce jour-là
       let dayRevenue = 0;
       dayOrders.forEach(order => {
         const items = order.items || [];
         items.forEach(item => {
-          const buyingPrice = Number(item.buyingPrice || item.supplierPrice || 0);
+          // On priorise supplierPrice (nomenclature officielle)
+          const buyingPrice = Number(item.supplierPrice || 0);
           const quantity = Number(item.quantity || 0);
           dayRevenue += buyingPrice * quantity;
         });
         const deliveryFee = Number(order.details?.deliveryFee || 0);
-        dayRevenue += deliveryFee * 0.9;
+        dayRevenue += deliveryFee * 0.9; // 90% pour le fournisseur
       });
       
       last7Days.push({
         date: dayStart,
-        revenue: dayRevenue,
+        revenue: Math.round(dayRevenue), // On arrondit pour éviter les centimes visuels
         orders: dayOrders.length
       });
     }
     
-    // Tendance (croissance)
-    const recentRevenue = last7Days.slice(4, 7).reduce((sum, day) => sum + day.revenue, 0);
-    const olderRevenue = last7Days.slice(0, 3).reduce((sum, day) => sum + day.revenue, 0);
+    // 5. Calcul de tendance corrigé : compare (J-2, J-1, J0) avec (J-5, J-4, J-3)
+    const recentRevenue = last7Days.slice(4, 7).reduce((sum, day) => sum + day.revenue, 0); 
+    const olderRevenue = last7Days.slice(1, 4).reduce((sum, day) => sum + day.revenue, 0);
     const growthTrend = olderRevenue > 0 ? ((recentRevenue - olderRevenue) / olderRevenue) * 100 : 0;
     
     return {
@@ -73,6 +95,7 @@ const SupplierDashboard = () => {
       avgDailyOrders: delivered.length / 7
     };
   }, [allOrders]);
+
 
   // Sécurité de Session
   useEffect(() => {
@@ -353,20 +376,25 @@ const SupplierDashboard = () => {
             {advancedStats.last7Days.map((day, index) => {
               const maxRevenue = Math.max(...advancedStats.last7Days.map(d => d.revenue), 1);
               const heightPercentage = (day.revenue / maxRevenue) * 100;
-              
+                            
               return (
-                <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                // AJOUT DE 'h-full' et 'justify-end' ICI
+                <div key={index} className="flex-1 h-full flex flex-col justify-end items-center gap-2">
+                  
                   <div className="w-full bg-slate-700/30 rounded-t-lg relative group cursor-pointer hover:bg-slate-700/50 transition-all"
-                       style={{ height: `${heightPercentage}%`, minHeight: '4px' }}>
+                      // Si le texte du bas coupe la barre, vous pouvez ajuster ici : ex. height: `${heightPercentage * 0.8}%`
+                      style={{ height: `${heightPercentage}%`, minHeight: '4px' }}>
+                    
                     <div className="absolute inset-0 bg-gradient-to-t from-purple-600 to-purple-400 rounded-t-lg"></div>
                     
-                    {/* Tooltip */}
+                    {/* Tooltip (inchangé) */}
                     <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg shadow-lg transition-opacity whitespace-nowrap z-10">
                       <p className="text-xs text-purple-400 font-bold">{day.revenue.toLocaleString()} F</p>
                       <p className="text-xs text-slate-400">{day.orders} commande{day.orders > 1 ? 's' : ''}</p>
                     </div>
                   </div>
                   
+                  {/* Date */}
                   <span className="text-xs text-slate-500 font-medium">
                     {day.date.toLocaleDateString('fr-FR', { weekday: 'short' })}
                   </span>

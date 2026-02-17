@@ -334,7 +334,7 @@ const Cart = () => {
                         maxLength={VALIDATION_RULES.PROMO_CODE.LENGTH}
                         className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                         onKeyPress={(e) => e.key === 'Enter' && handleApplyPromo()}
-                      />
+                      /> 
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
