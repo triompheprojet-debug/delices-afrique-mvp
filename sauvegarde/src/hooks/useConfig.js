@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - useConfig Hook
+ * Délices d'Afrique - useConfig Hook
  * Gestion de la configuration globale
  * ========================================
  */

@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - usePartner Hook
+ * Délices d'Afrique - usePartner Hook
  * Gestion des données partenaires
  * ========================================
  */

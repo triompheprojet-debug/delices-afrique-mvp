@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - Modal
+ * Délices d'Afrique - Modal
  * Modales réutilisables premium
  * ========================================
  */

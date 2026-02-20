@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - FORMATTERS
+ * Délices d'Afrique - FORMATTERS
  * Formatage des données pour affichage
  * ========================================
  */

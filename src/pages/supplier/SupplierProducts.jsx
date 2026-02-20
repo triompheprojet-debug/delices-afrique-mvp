@@ -235,7 +235,7 @@ const SupplierProducts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-safe text-slate-200 font-sans selection:bg-purple-500/30">
+    <div className="w-full text-slate-200 font-sans selection:bg-purple-500/30">
       
       {/* ========================================
           HEADER RESPONSIVE
@@ -247,7 +247,7 @@ const SupplierProducts = () => {
             : 'bg-slate-950 border-transparent py-4 md:py-6'
         }`}
       >
-        <div className="container-premium mx-auto">
+        <div className="w-full">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             
             {/* Titre & Ajout (Mobile Row) */}
@@ -323,7 +323,7 @@ const SupplierProducts = () => {
         </div>
       </header>
 
-      <div className="container-premium mx-auto mt-6">
+      <div className="w-full mt-6">
         
         {/* DASHBOARD STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">

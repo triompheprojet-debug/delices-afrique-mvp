@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - LoadingSpinner
+ * Délices d'Afrique - LoadingSpinner
  * Indicateurs de chargement premium
  * ========================================
  */

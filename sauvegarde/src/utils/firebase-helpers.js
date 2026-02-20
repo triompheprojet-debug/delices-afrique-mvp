@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - FIREBASE HELPERS
+ * Délices d'Afrique - FIREBASE HELPERS
  * Helpers Firestore pour interactions DB
  * ========================================
  */

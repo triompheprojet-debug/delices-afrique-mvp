@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - OurArtisans
+ * Délices d'Afrique - OurArtisans
  * Section valorisant les artisans fournisseurs
  * ========================================
  */

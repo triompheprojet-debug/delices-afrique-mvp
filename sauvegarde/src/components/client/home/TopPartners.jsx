@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - TopPartners
+ * Délices d'Afrique - TopPartners
  * Podium des meilleurs partenaires du mois
  * ========================================
  */

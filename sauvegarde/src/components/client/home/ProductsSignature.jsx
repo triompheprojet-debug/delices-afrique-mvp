@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - ProductsSignature
+ * Délices d'Afrique - ProductsSignature
  * Produits vedettes en carousel premium
  * ========================================
  */

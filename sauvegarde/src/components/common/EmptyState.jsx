@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - EmptyState
+ * Délices d'Afrique - EmptyState
  * États vides élégants et informatifs
  * ========================================
  */

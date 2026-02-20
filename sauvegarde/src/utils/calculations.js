@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - CALCULS MÉTIER
+ * Délices d'Afrique - CALCULS MÉTIER
  * Logique de calcul centralisée pour partenaires
  * ========================================
  */

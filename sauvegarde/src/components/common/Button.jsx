@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - Button
+ * Délices d'Afrique - Button
  * Boutons premium avec variantes
  * ========================================
  */

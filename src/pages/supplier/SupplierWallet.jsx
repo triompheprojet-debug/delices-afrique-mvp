@@ -202,7 +202,7 @@ const SupplierWallet = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container-premium mx-auto space-y-4 md:space-y-6 pb-20 md:pb-8"
+      className="w-full space-y-4 md:space-y-6"
     >
       
       {/* ========================================
@@ -251,12 +251,11 @@ const SupplierWallet = () => {
           </div>
         </div>
       </div>
-
       {/* ========================================
-          2. NAVIGATION (Sticky Mobile Scroll)
+          2. NAVIGATION (Responsive Tabs)
           ======================================== */}
-      <div className="sticky top-[4rem] md:top-20 z-40 -mx-4 md:mx-0 px-4 md:px-0 bg-slate-900/80 backdrop-blur-xl md:bg-transparent md:backdrop-filter-none py-2 md:py-0">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 snap-x">
+      <div className="sticky top-[4rem] lg:top-20 z-40 -mx-4 lg:mx-0 px-4 lg:px-2 py-3 lg:py-2 bg-slate-950/80 lg:bg-slate-900/90 backdrop-blur-xl border-y lg:border lg:rounded-2xl border-slate-800 shadow-lg shadow-slate-950/20 transition-all">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x md:flex-wrap lg:flex-nowrap items-center">
           {[
             { id: 'overview', label: 'Aperçu', icon: PieChart },
             { id: 'details', label: 'Commandes', icon: FileText },
@@ -267,19 +266,18 @@ const SupplierWallet = () => {
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`snap-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border ${
+              className={`snap-center shrink-0 flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab.id 
-                  ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-900/20' 
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-900/30 border border-purple-500/50' 
+                  : 'bg-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-transparent'
               }`}
             >
-              <tab.icon size={16} />
+              <tab.icon size={18} className={activeTab === tab.id ? 'text-white' : 'text-slate-500'} />
               {tab.label}
             </button>
           ))}
         </div>
       </div>
-
       {/* ========================================
           3. CONTENU DES ONGLETS
           ======================================== */}

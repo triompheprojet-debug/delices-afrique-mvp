@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - TrustSection
+ * Délices d'Afrique - TrustSection
  * Indicateurs de confiance et statistiques
  * ========================================
  */

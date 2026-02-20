@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
-import { doc, onSnapshot, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   Wallet, DollarSign, TrendingUp, Clock, CheckCircle,
   AlertCircle, Download, Eye, EyeOff, Smartphone, 
-  ChevronRight, Zap, Target, ArrowUpRight, ArrowDownRight,
-  Calendar, Gift, Sparkles, CreditCard, Users, Trophy
+  Calendar, Gift, Trophy, Sparkles, Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   PARTNER_LEVELS, WITHDRAWAL_LIMITS, MOBILE_OPERATORS,
-  ORDER_STATUS, PROMO_STATUS, WITHDRAWAL_STATUS
+  ORDER_STATUS, WITHDRAWAL_STATUS
 } from '../../utils/constants';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const PartnerWallet = () => {
   const [partner, setPartner] = useState(null);
@@ -30,144 +29,147 @@ const PartnerWallet = () => {
   const [submitting, setSubmitting] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
 
+  // Stats calculées dynamiquement
   const [stats, setStats] = useState({
-    availableBalance: 0,
-    totalEarned: 0,
-    totalWithdrawn: 0,
-    pendingWithdrawals: 0,
+    availableBalance: 0,    // Calculé: Earnings - (Paid + Pending Withdrawals)
+    totalEarned: 0,         // Calculé: Somme des commissions "Terminé"
+    totalWithdrawn: 0,      // Calculé: Somme des retraits "paid"
+    pendingWithdrawals: 0,  // Calculé: Somme des retraits "pending"
     projectedMonthly: 0,
     last7DaysEarnings: []
   });
 
-  // ✅ Seuils de retrait par niveau → WITHDRAWAL_LIMITS (constants.js)
   const WITHDRAWAL_THRESHOLDS = WITHDRAWAL_LIMITS;
 
   useEffect(() => {
     const sessionStr = sessionStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
-    
-    const unsubscribe = onSnapshot(doc(db, "partners", sessionData.id), (doc) => {
-      const partnerData = { id: doc.id, ...doc.data() };
-      setPartner(partnerData);
-      loadWithdrawals(sessionData.id);
-      loadEarningsData(sessionData.id);
-      
-      setStats(prev => ({
-        ...prev,
-        availableBalance: partnerData.walletBalance || 0,
-        totalEarned: partnerData.totalEarnings || 0,
-        totalWithdrawn: partnerData.totalWithdrawn || 0
-      }));
-      
-      setLoading(false);
+    const partnerId = sessionData.id;
+
+    let localOrders = [];
+    let localWithdrawals = [];
+
+    // 1. Écoute Profil Partenaire (pour le nom et le niveau)
+    const unsubPartner = onSnapshot(doc(db, "partners", partnerId), (d) => {
+      if(d.exists()) setPartner({ id: d.id, ...d.data() });
     });
 
-    return () => unsubscribe();
+    // 2. Écoute Commandes (Source de vérité des Gains)
+    const qOrders = query(
+      collection(db, "orders"), 
+      where("promo.partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+    const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+      localOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      recalculateWallet(localOrders, localWithdrawals);
+    });
+
+    // 3. Écoute Retraits (Source de vérité des Dépenses)
+    const qWithdrawals = query(
+      collection(db, "withdrawals"),
+      where("partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+    const unsubWithdrawals = onSnapshot(qWithdrawals, (snapshot) => {
+      localWithdrawals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setWithdrawals(localWithdrawals); // Mise à jour de la liste UI
+      recalculateWallet(localOrders, localWithdrawals);
+    });
+
+    return () => {
+      unsubPartner();
+      unsubOrders();
+      unsubWithdrawals();
+    };
   }, []);
 
-  const loadWithdrawals = async (partnerId) => {
-    try {
-      const q = query(
-        collection(db, "withdrawals"),
-        where("partnerId", "==", partnerId),
-        orderBy("createdAt", "desc") 
-      );
-      
-      const snapshot = await getDocs(q);
-      const withdrawalsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setWithdrawals(withdrawalsData);
-      
-      const pending = withdrawalsData
-        .filter(w => w.status === WITHDRAWAL_STATUS.PENDING)
-        .reduce((sum, w) => sum + w.amount, 0);
-      
-      setStats(prev => ({ ...prev, pendingWithdrawals: pending }));
-    } catch (error) {
-      console.error('Erreur chargement retraits:', error);
-    }
-  };
+  // --- COEUR DU SYSTÈME : CALCUL DYNAMIQUE ---
+  const recalculateWallet = (orders, withdrawalsList) => {
+    
+    // A. Calcul des Gains (Règle : Uniquement statut "Terminé")
+    const completedOrders = orders.filter(o => o.status === 'Terminé');
+    const totalEarned = completedOrders.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
 
-    const loadEarningsData = async (partnerId) => {
-      try {
-        const q = query(
-          collection(db, "orders"),
-          where("promo.partnerId", "==", partnerId),
-          orderBy("createdAt", "desc")
-        );
-        
-        const snapshot = await getDocs(q);
-        const orders = snapshot.docs.map(doc => doc.data());
-        
-        // ✅ CORRECTION : Filtrer uniquement les commandes livrées/terminées
-        const deliveredOrders = orders.filter(o => 
-          o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED
-        );
-        
-        // ✅ Gains 30 derniers jours (dynamique)
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        
-        const recentEarnings = deliveredOrders.filter(order => {
-          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
-          return orderDate >= thirtyDaysAgo;
-        });
-        
-        const last30Total = recentEarnings.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
-        const projectedMonthly = Math.round(last30Total);
-        
-        // ✅ Graphique 7 derniers jours
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (6 - i));
-          date.setHours(0, 0, 0, 0);
-          return {
-            date: date.toISOString().split('T')[0],
-            day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
-            earnings: 0
-          };
-        });
-        
-        // ✅ CORRECTION : Utiliser deliveredOrders au lieu de orders
-        deliveredOrders.forEach(order => {
-          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
-          orderDate.setHours(0, 0, 0, 0);
-          const dateStr = orderDate.toISOString().split('T')[0];
-          const dayData = last7Days.find(d => d.date === dateStr);
-          if (dayData) {
-            dayData.earnings += order.promo?.partnerCommission || 0;
-          }
-        });
-        
-        setStats(prev => ({
-          ...prev,
-          projectedMonthly,
-          last7DaysEarnings: last7Days
-        }));
-      } catch (error) {
-        console.error('Erreur chargement earnings:', error);
+    // B. Calcul des Retraits
+    // Ce qui a été payé réellement
+    const totalPaidWithdrawn = withdrawalsList
+      .filter(w => w.status === WITHDRAWAL_STATUS.PAID)
+      .reduce((sum, w) => sum + (w.amount || 0), 0);
+    
+    // Ce qui est bloqué (en attente)
+    const totalPendingWithdrawn = withdrawalsList
+      .filter(w => w.status === WITHDRAWAL_STATUS.PENDING)
+      .reduce((sum, w) => sum + (w.amount || 0), 0);
+
+    // C. Calcul du Solde Disponible
+    // Solde = Gains Totaux - (Déjà payé + En attente de paiement)
+    const availableBalance = totalEarned - (totalPaidWithdrawn + totalPendingWithdrawn);
+
+    // D. Analytics (Graphiques & Projections)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Projection mensuelle (basée sur les 30 derniers jours de gains validés)
+    const last30Earnings = completedOrders
+      .filter(o => {
+        const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date((o.createdAt?.seconds || 0) * 1000);
+        return d >= thirtyDaysAgo;
+      })
+      .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+    
+    // Graphique 7 derniers jours
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      date.setHours(0, 0, 0, 0);
+      return {
+        date: date.toISOString().split('T')[0],
+        day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+        earnings: 0
+      };
+    });
+
+    completedOrders.forEach(order => {
+      const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date((order.createdAt?.seconds || 0) * 1000);
+      d.setHours(0, 0, 0, 0);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayData = last7Days.find(d => d.date === dateStr);
+      if (dayData) {
+        dayData.earnings += order.promo?.partnerCommission || 0;
       }
-    };
+    });
+
+    setStats({
+      availableBalance,
+      totalEarned,
+      totalWithdrawn: totalPaidWithdrawn,
+      pendingWithdrawals: totalPendingWithdrawn,
+      projectedMonthly: Math.round(last30Earnings),
+      last7DaysEarnings: last7Days
+    });
+    
+    setLoading(false);
+  };
 
   const handleWithdrawRequest = async (e) => {
     e.preventDefault();
     setWithdrawError('');
     
     const amount = Number(withdrawForm.amount);
-    const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || WITHDRAWAL_LIMITS[PARTNER_LEVELS.STANDARD];
+    // On utilise le niveau affiché dans le partner doc, ou par défaut standard
+    const currentLevel = partner?.level || PARTNER_LEVELS.STANDARD;
+    const minWithdrawal = WITHDRAWAL_THRESHOLDS[currentLevel] || 2000;
     
-    // ✅ Validation avec seuil par niveau
+    // Validation avec le solde CALCULÉ (stats.availableBalance)
     if (amount < minWithdrawal) {
-      setWithdrawError(`Le montant minimum pour le niveau ${partner.level} est de ${minWithdrawal.toLocaleString()} FCFA`);
+      setWithdrawError(`Le montant minimum pour le niveau ${currentLevel} est de ${minWithdrawal.toLocaleString()} FCFA`);
       return;
     }
     
     if (amount > stats.availableBalance) {
-      setWithdrawError('Solde insuffisant');
+      setWithdrawError('Solde insuffisant (vérifiez vos retraits en attente)');
       return;
     }
     
@@ -192,7 +194,8 @@ const PartnerWallet = () => {
         processedAt: null
       });
       
-      alert('✅ Demande de retrait envoyée ! Vous recevrez votre paiement sous 24-48h.');
+      // Pas besoin de recharger manuellement, le listener withdrawals va mettre à jour le solde automatiquement
+      alert('✅ Demande de retrait envoyée !');
       setShowWithdrawModal(false);
       setWithdrawForm({
         amount: '',
@@ -201,7 +204,6 @@ const PartnerWallet = () => {
         operator: MOBILE_OPERATORS[0]
       });
       
-      loadWithdrawals(partner.id);
     } catch (error) {
       console.error('Erreur retrait:', error);
       setWithdrawError('Une erreur est survenue. Veuillez réessayer.');
@@ -227,7 +229,7 @@ const PartnerWallet = () => {
       <div className="flex justify-center items-center py-20">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Chargement du portefeuille...</p>
+          <p className="text-slate-400">Calcul du solde en cours...</p>
         </div>
       </div>
     );
@@ -280,9 +282,8 @@ const PartnerWallet = () => {
                 <p className="text-purple-100 text-xs mb-0.5">Déjà retiré</p>
                 <p className="text-white font-bold">{stats.totalWithdrawn.toLocaleString()} F</p>
               </div>
-              {/* ✅ Affichage seuil par niveau */}
               <div className="bg-yellow-500/20 backdrop-blur-md px-4 py-2 rounded-xl border border-yellow-400/30">
-                <p className="text-yellow-100 text-xs mb-0.5">Minimum retrait ({partner?.level})</p>
+                <p className="text-yellow-100 text-xs mb-0.5">Min. retrait ({partner?.level})</p>
                 <p className="text-yellow-300 font-bold">{minWithdrawal.toLocaleString()} F</p>
               </div>
             </div>
@@ -314,31 +315,20 @@ const PartnerWallet = () => {
       {/* Analytics & Projections */}
       <div className="grid lg:grid-cols-2 gap-6">
         
-        {/* Graphique 7 jours */}
+        {/* Graphique 7 jours (Gains validés) */}
         <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
             <TrendingUp className="text-green-400" size={20} />
-            Évolution des gains
+            Évolution des gains (validés)
           </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.last7DaysEarnings}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis 
-                  dataKey="day" 
-                  stroke="#64748B" 
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  stroke="#64748B" 
-                  style={{ fontSize: '12px' }}
-                />
+                <XAxis dataKey="day" stroke="#64748B" style={{ fontSize: '12px' }}/>
+                <YAxis stroke="#64748B" style={{ fontSize: '12px' }}/>
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1E293B', 
-                    border: '1px solid #334155',
-                    borderRadius: '12px'
-                  }}
+                  contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '12px' }}
                 />
                 <Bar dataKey="earnings" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
               </BarChart>

@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - AUTH CONTEXT
+ * Délices d'Afrique - AUTH CONTEXT
  * Gestion globale de l'authentification
  * ========================================
  */

@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - CART CONTEXT
+ * Délices d'Afrique - CART CONTEXT
  * Gestion du panier et codes promo
  * ========================================
  */

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 /**
- * 🏪 PAGE D'INFORMATION FOURNISSEUR - DÉLICES D'AFRIQUE
+ * 🏪 PAGE D'INFORMATION FOURNISSEUR - Délices d'Afrique
  * 
  * Cette page explique TOUT le fonctionnement de l'espace fournisseur.
  * Design séquentiel et direct - toutes les infos visibles d'un coup.

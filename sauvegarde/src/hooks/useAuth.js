@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - useAuth Hook
+ * Délices d'Afrique - useAuth Hook
  * Gestion de l'authentification Firebase
  * ========================================
  */

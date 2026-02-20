@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - CTASection
+ * Délices d'Afrique - CTASection
  * Double appel à l'action final
  * ========================================
  */

@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - ProductCard
+ * Délices d'Afrique - ProductCard
  * Carte produit premium modernisée
  * ========================================
  */

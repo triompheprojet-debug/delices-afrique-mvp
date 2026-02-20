@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - VALIDATORS
+ * Délices d'Afrique - VALIDATORS
  * Validations de données
  * ========================================
  */

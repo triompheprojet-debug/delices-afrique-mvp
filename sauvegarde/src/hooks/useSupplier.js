@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - useSupplier Hook
+ * Délices d'Afrique - useSupplier Hook
  * Gestion des données fournisseurs
  * ========================================
  */

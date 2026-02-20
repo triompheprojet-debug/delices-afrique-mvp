@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - HeroSection
+ * Délices d'Afrique - HeroSection
  * Section hero premium avec impact visuel
  * ========================================
  */

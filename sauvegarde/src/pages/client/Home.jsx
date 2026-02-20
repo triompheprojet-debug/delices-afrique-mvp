@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - Home Page
+ * Délices d'Afrique - Home Page
  * Page d'accueil premium
  * ========================================
  */

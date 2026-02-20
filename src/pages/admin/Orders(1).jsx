@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { 
-  Search, ShoppingBag, Phone, 
+  Search, Truck, ShoppingBag, Phone, MapPin, 
   Clock, Calendar, DollarSign, ChevronDown, ChevronUp,
-  CreditCard, User, AlertCircle, Store,
-  Package, Gift, FileText, CheckCircle2,
-  Filter, TrendingUp, Award, Truck
+  CreditCard, User, AlertCircle, Store, Shield,
+  Package, Gift, FileText, CheckCircle2, Eye, X,
+  Filter, TrendingUp, Download, Sparkles, Award
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,7 +33,6 @@ const Orders = () => {
         ...doc.data()
       }));
 
-      // Petit son de notification si nouvelle commande arrive
       if (!loading && ordersData.length > orders.length) {
          audioRef.current.play().catch(e => console.log("Audio autoplay bloqué"));
       }
@@ -65,7 +64,7 @@ const Orders = () => {
     setFilteredOrders(result);
   }, [orders, searchTerm, statusFilter]);
 
-  // Mise à jour statut (LOGIQUE REFACTORISÉE : PLUS D'INCREMENT DB)
+  // Mise à jour statut avec paiement commission
   const updateStatus = async (orderId, newStatus) => {
     try {
       const orderRef = doc(db, "orders", orderId);
@@ -78,7 +77,7 @@ const Orders = () => {
       
       const orderData = orderSnap.data();
       
-      // Sécurité : Empêcher retour en arrière (sauf annulation)
+      // Sécurité : Empêcher retour en arrière
       const statusOrder = ['En attente', 'En préparation', 'En livraison', 'Livré', 'Terminé'];
       const currentIndex = statusOrder.indexOf(orderData.status);
       const newIndex = statusOrder.indexOf(newStatus);
@@ -88,30 +87,87 @@ const Orders = () => {
         return;
       }
       
-      // Préparation de la mise à jour
-      let updateData = {
-        status: newStatus,
-        [`statusHistory.${newStatus}`]: serverTimestamp()
-      };
-
-      // Si le statut passe à "Terminé", on valide visuellement la promo
-      // MAIS on ne touche plus à la collection "partners" (calcul dynamique côté client)
+      // Paiement commission quand statut = "Terminé"
       if (newStatus === 'Terminé') {
+        
         if (orderData.promo?.partnerId) {
-            // On marque simplement la promo comme "validée" sur la commande
-            // Cela servira pour les filtres et l'affichage (vert) côté partenaire
-            updateData["promo.status"] = "validated";
-            updateData["promo.paidAt"] = serverTimestamp();
+          const partnerId = orderData.promo.partnerId;
+          const commission = orderData.promo.partnerCommission || 0;
+          
+          // Vérifier si déjà payé
+          if (orderData.promo.status === 'validated') {
+            await updateDoc(orderRef, { 
+              status: newStatus,
+              [`statusHistory.${newStatus}`]: serverTimestamp()
+            });
+            alert('✅ Statut mis à jour (commission déjà payée)');
+            return;
+          }
+          
+          if (commission <= 0) {
+            await updateDoc(orderRef, { 
+              status: newStatus,
+              [`statusHistory.${newStatus}`]: serverTimestamp()
+            });
+            alert('✅ Statut mis à jour (commission = 0)');
+            return;
+          }
+          
+          // Vérifier que le partenaire existe et est actif
+          const partnerRef = doc(db, "partners", partnerId);
+          const partnerSnap = await getDoc(partnerRef);
+          
+          if (!partnerSnap.exists()) {
+            alert('⚠️ Partenaire introuvable. Commission non payée.');
+            return;
+          }
+          
+          const partnerData = partnerSnap.data();
+          
+          if (!partnerData.isActive) {
+            alert('⚠️ Partenaire inactif. Impossible de payer la commission.');
+            return;
+          }
+          
+          // Payer la commission
+          try {
+            await updateDoc(partnerRef, {
+              walletBalance: increment(commission),
+              totalEarnings: increment(commission)
+            });
+            
+            // Marquer comme payé
+            await updateDoc(orderRef, {
+              status: newStatus,
+              "promo.status": "validated",
+              "promo.paidAt": serverTimestamp(),
+              [`statusHistory.${newStatus}`]: serverTimestamp()
+            });
+            
+            alert(`✅ Commission de ${commission} FCFA payée à ${partnerData.fullName}`);
+            
+          } catch (paymentError) {
+            console.error('❌ Erreur paiement commission:', paymentError);
+            alert('❌ Erreur lors du paiement de la commission');
+            throw paymentError;
+          }
+          
+        } else {
+          // Pas de partenaire, juste changer le statut
+          await updateDoc(orderRef, { 
+            status: newStatus,
+            [`statusHistory.${newStatus}`]: serverTimestamp()
+          });
+          alert('✅ Statut mis à jour');
         }
-      }
-
-      // Exécution de la mise à jour uniquement sur la commande
-      await updateDoc(orderRef, updateData);
-      
-      if (newStatus === 'Terminé' && orderData.promo?.partnerId) {
-        alert('✅ Commande terminée. La commission sera calculée dynamiquement sur le dashboard partenaire.');
+        
       } else {
-        alert(`✅ Statut mis à jour : ${newStatus}`);
+        // Autres statuts
+        await updateDoc(orderRef, { 
+          status: newStatus,
+          [`statusHistory.${newStatus}`]: serverTimestamp()
+        });
+        alert('✅ Statut mis à jour');
       }
       
     } catch (error) {
@@ -161,11 +217,17 @@ const Orders = () => {
     // Prix site (sans réduction) + frais livraison
     const totalRevenue = subTotal + deliveryFee;
     
-    // Gain admin estimé
-    const adminEarnings = totalRevenue - discount - partnerCommission;
+    // Prix fournisseur (on suppose 0 pour l'instant, à ajuster selon votre logique)
+    const supplierCost = 0; // À définir selon votre système
+    
+    // Gain admin = Revenue total - Réduction client - Commission partenaire - Coût fournisseur
+    const adminEarnings = totalRevenue - discount - partnerCommission - supplierCost;
     
     return {
       totalRevenue,
+      discount,
+      partnerCommission,
+      supplierCost,
       adminEarnings
     };
   };
@@ -182,7 +244,7 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-6 pb-24">
+    <div className="min-h-screen bg-slate-950 p-4 md:p-6">
       
       {/* Header */}
       <div className="mb-8">
@@ -289,7 +351,7 @@ const Orders = () => {
                 className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all"
               >
                 
-                {/* Header carte */}
+                {/* Header carte - Toujours visible */}
                 <div 
                   className="p-5 md:p-6 cursor-pointer"
                   onClick={() => toggleExpand(order.id)}
@@ -371,7 +433,7 @@ const Orders = () => {
                         
                         <div className="grid md:grid-cols-2 gap-6">
                           
-                          {/* Colonne gauche - Infos client */}
+                          {/* Colonne gauche - Infos client & livraison */}
                           <div className="space-y-4">
                             
                             {/* Client */}
@@ -559,17 +621,28 @@ const Orders = () => {
                                   </div>
                                   
                                   <div className="flex justify-between items-center bg-slate-950/50 rounded-lg p-2.5">
-                                    <span className="text-slate-400 text-xs">Statut commission</span>
-                                    {order.status === 'Terminé' ? (
-                                      <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
-                                        ✓ Disponible
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-1 rounded text-xs font-bold bg-orange-500/20 text-orange-400">
-                                        ⏳ En attente
-                                      </span>
-                                    )}
+                                    <span className="text-slate-400 text-xs">Statut paiement</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                      order.promo.status === 'validated' 
+                                        ? 'bg-green-500/20 text-green-400' 
+                                        : 'bg-orange-500/20 text-orange-400'
+                                    }`}>
+                                      {order.promo.status === 'validated' ? '✓ Payé' : '⏳ En attente'}
+                                    </span>
                                   </div>
+                                  
+                                  {order.promo.paidAt && (
+                                    <p className="text-xs text-slate-500">
+                                      Payé le {formatDate(order.promo.paidAt)}
+                                    </p>
+                                  )}
+
+                                  {order.promo.status === 'validated' && (
+                                    <div className="flex items-start gap-2 text-xs text-green-400 bg-green-500/10 p-2 rounded-lg">
+                                      <Shield size={12} className="mt-0.5 flex-shrink-0"/>
+                                      <span>Protection anti-double-paiement active</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -657,7 +730,7 @@ const Orders = () => {
                           <div className="flex items-start gap-2 text-xs text-purple-400 bg-purple-500/10 p-3 rounded-lg">
                             <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
                             <span>
-                              "Terminé" valide la commission du partenaire pour le retrait.
+                              "Terminé" déclenche automatiquement le paiement de la commission partenaire (si applicable)
                             </span>
                           </div>
                         </div>

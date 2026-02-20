@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - CONFIG CONTEXT
+ * Délices d'Afrique - CONFIG CONTEXT
  * Gestion de la configuration globale
  * ========================================
  */

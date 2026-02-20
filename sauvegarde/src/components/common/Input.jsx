@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - Input
+ * Délices d'Afrique - Input
  * Champs de saisie stylisés premium
  * ========================================
  */

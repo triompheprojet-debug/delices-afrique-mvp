@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - ClientLayout
+ * Délices d'Afrique - ClientLayout
  * Layout premium avec header et navigation mobile
  * ========================================
  */

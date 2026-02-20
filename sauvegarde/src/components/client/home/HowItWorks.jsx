@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - HowItWorks
+ * Délices d'Afrique - HowItWorks
  * Processus simple en 3-4 étapes
  * ========================================
  */

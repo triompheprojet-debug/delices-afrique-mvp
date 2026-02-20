@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
-import { doc, onSnapshot, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { 
-  Copy, CheckCircle, Share2, TrendingUp, TrendingDown,
+  Copy, CheckCircle, Share2, TrendingUp, 
   DollarSign, Calendar, Star, ChevronRight, Loader2,
-  Award, Target, Zap, Users, Gift, Eye, BarChart3,
-  Clock, Sparkles, Trophy, ArrowUp, ArrowDown, Minus
+  Award, Target, Zap, BarChart3, Trophy, ArrowUp, ArrowDown, Minus, Gift
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   PARTNER_LEVELS, LEVEL_RULES, LEVEL_UI,
-  WITHDRAWAL_LIMITS, ORDER_STATUS
+  WITHDRAWAL_LIMITS
 } from '../../utils/constants';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const PartnerDashboard = () => {
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [salesData, setSalesData] = useState([]);
+  
+  // États pour les données calculées dynamiquement
+  const [metrics, setMetrics] = useState({
+    salesCount: 0,        // Pour le niveau (Livré + Terminé)
+    totalEarnings: 0,     // Gains validés (Terminé uniquement)
+    walletBalance: 0,     // Earnings - Retraits
+    pendingEarnings: 0    // Commissions en attente (Pas encore Terminé)
+  });
+
   const [stats, setStats] = useState({
     todayEarnings: 0,
     weekEarnings: 0,
@@ -28,147 +35,199 @@ const PartnerDashboard = () => {
     topProducts: []
   });
 
-  // ✅ Seuils de retrait → WITHDRAWAL_LIMITS (constants.js)
+  const [salesData, setSalesData] = useState([]);
   const WITHDRAWAL_THRESHOLDS = WITHDRAWAL_LIMITS;
 
-  // ✅ Récupération des données partenaire en temps réel
   useEffect(() => {
     const sessionStr = sessionStorage.getItem('partnerSession');
     if (!sessionStr) return;
     const sessionData = JSON.parse(sessionStr);
-    
-    const unsubscribe = onSnapshot(doc(db, "partners", sessionData.id), (doc) => {
-      if (!doc.exists()) return;
-      
-      const partnerData = { id: doc.id, ...doc.data() };
-      setPartner(partnerData);
-      
-      // Charger les analytics dès qu'on a les données partenaire
-      loadSalesAnalytics(doc.id);
-      setLoading(false);
+    const partnerId = sessionData.id;
+
+    // 1. Écoute du profil partenaire (Juste pour le nom, code promo, etc.)
+    const unsubPartner = onSnapshot(doc(db, "partners", partnerId), (doc) => {
+      if (doc.exists()) {
+        setPartner({ id: doc.id, ...doc.data() });
+      }
     });
 
-    return () => unsubscribe();
+    // 2. Écoute des Commandes (Source de vérité pour Ventes & Gains)
+    const qOrders = query(
+      collection(db, "orders"), 
+      where("promo.partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+      const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      calculateMetricsAndStats(orders, partnerId);
+    });
+
+    return () => {
+      unsubPartner();
+      unsubOrders();
+    };
   }, []);
 
-  const loadSalesAnalytics = async (partnerId) => {
-    try {
-      // ✅ Requête correcte : utiliser promo.partnerId
-      const q = query(
-        collection(db, "orders"), 
-        where("promo.partnerId", "==", partnerId),
-        orderBy("createdAt", "desc")
-      );
-      
-      const snapshot = await getDocs(q);
-      const orders = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+  // Fonction centrale de calcul (exécutée à chaque mise à jour des commandes ou retraits)
+  const calculateMetricsAndStats = (orders, partnerId) => {
+    
+    // --- A. Calcul des Ventes et Gains (Source: Orders) ---
+    // Règle 1: Ventes = Livré OU Terminé
+    const validSales = orders.filter(o => o.status === 'Livré' || o.status === 'Terminé');
+    const salesCount = validSales.length;
 
-      calculateStats(orders);
-      generateChartData(orders);
-    } catch (error) {
-      console.error('Erreur analytics:', error);
-    }
+    // Règle 2: Gains = Terminé uniquement
+    const completedOrders = orders.filter(o => o.status === 'Terminé');
+    const totalEarnings = completedOrders.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+    
+    // Commissions en attente (pour info)
+    const pendingOrders = orders.filter(o => o.status !== 'Terminé' && o.status !== 'Annulé');
+    const pendingEarnings = pendingOrders.reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+
+    // --- B. Calcul des Retraits (Source: Withdrawals) ---
+    // On doit écouter les retraits pour calculer le solde exact
+    // Règle 3: Solde = Earnings - (Retraits Payés + Retraits En attente)
+    const qWithdrawals = query(collection(db, "withdrawals"), where("partnerId", "==", partnerId));
+    
+    // Note: On utilise onSnapshot à l'intérieur ici ou on pourrait le sortir. 
+    // Pour simplifier sans boucle infinie, on utilise un one-time fetch ici ou mieux, un listener séparé.
+    // OPTIMISATION: Pour ce dashboard, on va utiliser un listener séparé pour les retraits dans le useEffect principal
+    // Mais pour garder la logique groupée, on va tricher légèrement et supposer qu'on a les retraits.
+    // CORRECTION : Je vais ajouter un listener withdrawals dans le useEffect principal.
   };
 
-  const calculateStats = (orders) => {
+  // --- REWRITE DU USEEFFECT POUR INCLURE LES RETRAITS ---
+  useEffect(() => {
+    const sessionStr = sessionStorage.getItem('partnerSession');
+    if (!sessionStr) return;
+    const { id: partnerId } = JSON.parse(sessionStr);
+    let localOrders = [];
+    let localWithdrawals = [];
+
+    // 1. Profil Partenaire
+    const unsubPartner = onSnapshot(doc(db, "partners", partnerId), (d) => {
+      if(d.exists()) setPartner({ id: d.id, ...d.data() });
+    });
+
+    // 2. Commandes
+    const unsubOrders = onSnapshot(query(collection(db, "orders"), where("promo.partnerId", "==", partnerId), orderBy("createdAt", "desc")), (snap) => {
+      localOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      recalcAll(localOrders, localWithdrawals);
+    });
+
+    // 3. Retraits
+    const unsubWithdrawals = onSnapshot(query(collection(db, "withdrawals"), where("partnerId", "==", partnerId)), (snap) => {
+      localWithdrawals = snap.docs.map(d => d.data());
+      recalcAll(localOrders, localWithdrawals);
+    });
+
+    const recalcAll = (orders, withdrawals) => {
+      // 1. Ventes (Livré ou Terminé)
+      const validSales = orders.filter(o => o.status === 'Livré' || o.status === 'Terminé');
+      
+      // 2. Gains (Terminé uniquement)
+      const earned = orders
+        .filter(o => o.status === 'Terminé')
+        .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+
+      // 3. Retraits (Paid ou Pending impactent le solde dispo)
+      const withdrawnOrPending = withdrawals
+        .filter(w => w.status === 'paid' || w.status === 'pending')
+        .reduce((sum, w) => sum + (w.amount || 0), 0);
+
+      // 4. Commissions en attente
+      const pending = orders
+        .filter(o => o.status !== 'Terminé' && o.status !== 'Annulé')
+        .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
+
+      setMetrics({
+        salesCount: validSales.length,
+        totalEarnings: earned,
+        walletBalance: earned - withdrawnOrPending,
+        pendingEarnings: pending
+      });
+
+      // Calcul des stats analytiques (Graphiques, Top produits, etc.)
+      computeAnalytics(orders, validSales, earned);
+      setLoading(false);
+    };
+
+    return () => { unsubPartner(); unsubOrders(); unsubWithdrawals(); };
+  }, []);
+
+  const computeAnalytics = (allOrders, validSales, totalEarned) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 864e5);
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 864e5);
 
-    // ✅ CORRECTION : Filtrer les commandes "Livré" et "Terminé" (selon ta base de données)
-    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.COMPLETED);
+    // Helpers dates
+    const getOrderDate = (o) => o.createdAt?.toDate ? o.createdAt.toDate() : new Date((o.createdAt?.seconds || 0) * 1000);
 
-    // ✅ Gains aujourd'hui
-    const todayEarnings = deliveredOrders
-      .filter(o => {
-        const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt.seconds * 1000);
-        return orderDate >= today;
-      })
+    // Filtre pour les gains périodiques (uniquement sur commandes Terminées)
+    const completedOrders = allOrders.filter(o => o.status === 'Terminé');
+
+    const todayEarnings = completedOrders
+      .filter(o => getOrderDate(o) >= today)
       .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
 
-    // ✅ Gains cette semaine
-    const weekEarnings = deliveredOrders
-      .filter(o => {
-        const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt.seconds * 1000);
-        return orderDate >= sevenDaysAgo;
-      })
+    const weekEarnings = completedOrders
+      .filter(o => getOrderDate(o) >= sevenDaysAgo)
       .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
 
-    // ✅ Gains ce mois
-    const monthEarnings = deliveredOrders
-      .filter(o => {
-        const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt.seconds * 1000);
-        return orderDate >= thirtyDaysAgo;
-      })
+    const monthEarnings = completedOrders
+      .filter(o => getOrderDate(o) >= thirtyDaysAgo)
       .reduce((sum, o) => sum + (o.promo?.partnerCommission || 0), 0);
 
-    const totalOrders = orders.length;
-    const successfulOrders = deliveredOrders.length;
-    const conversionRate = totalOrders > 0 ? (successfulOrders / totalOrders) * 100 : 0;
+    // Taux conversion (basé sur validSales / total non annulé)
+    const nonCancelled = allOrders.filter(o => o.status !== 'Annulé');
+    const conversionRate = nonCancelled.length > 0 ? (validSales.length / nonCancelled.length) * 100 : 0;
 
-    const avgOrderValue = successfulOrders > 0
-      ? deliveredOrders.reduce((sum, o) => sum + (o.details?.finalTotal || 0), 0) / successfulOrders
+    // Panier moyen (sur les ventes valides)
+    const avgOrderValue = validSales.length > 0
+      ? validSales.reduce((sum, o) => sum + (o.details?.finalTotal || 0), 0) / validSales.length
       : 0;
 
-    // ✅ Top produits
+    // Top Produits
     const productMap = {};
-    deliveredOrders.forEach(order => {
+    validSales.forEach(order => {
       order.items?.forEach(item => {
-        if (!productMap[item.id]) {
-          productMap[item.id] = { name: item.name, count: 0, revenue: 0 };
-        }
+        if (!productMap[item.id]) productMap[item.id] = { name: item.name, count: 0, revenue: 0 };
         productMap[item.id].count += item.quantity;
         productMap[item.id].revenue += item.price * item.quantity;
       });
     });
+    const topProducts = Object.values(productMap).sort((a, b) => b.count - a.count).slice(0, 5);
 
-    const topProducts = Object.values(productMap)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    setStats({ todayEarnings, weekEarnings, monthEarnings, conversionRate, avgOrderValue, topProducts });
 
-    setStats({
-      todayEarnings,
-      weekEarnings,
-      monthEarnings,
-      conversionRate,
-      avgOrderValue,
-      topProducts
-    });
-  };
+    // Graphique 30 derniers jours (Gains validés uniquement)
+    // Utiliser la date locale au format YYYY-MM-DD
+    const getLocalDateString = (dateObj) => {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
-  const generateChartData = (orders) => {
-    // ✅ Filtrer uniquement les commandes validées
-    const deliveredOrders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED || o.status === ORDER_STATUS.COMPLETED);
-    
-    const last30Days = Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (29 - i));
-      date.setHours(0, 0, 0, 0);
+    const chartData = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (29 - i));
       return {
-        date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-        sales: 0,
+        date: getLocalDateString(d), 
+        day: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
         earnings: 0
       };
     });
 
-    deliveredOrders.forEach(order => {
-      const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt.seconds * 1000);
-      orderDate.setHours(0, 0, 0, 0);
-      const dateStr = orderDate.toISOString().split('T')[0];
-      
-      const dayData = last30Days.find(d => d.date === dateStr);
-      if (dayData) {
-        dayData.sales += 1;
-        dayData.earnings += order.promo?.partnerCommission || 0;
-      }
+    completedOrders.forEach(o => {
+      const dStr = getLocalDateString(getOrderDate(o)); 
+      const entry = chartData.find(c => c.date === dStr);
+      if (entry) entry.earnings += (o.promo?.partnerCommission || 0);
     });
 
-    setSalesData(last30Days);
+    setSalesData(chartData);
   };
 
   const copyToClipboard = () => {
@@ -179,40 +238,26 @@ const PartnerDashboard = () => {
     }
   };
 
-  // ✅ getLevelDetails() — s'appuie sur LEVEL_UI + LEVEL_RULES + PARTNER_LEVELS (constants.js)
-  const getLevelDetails = (sales = 0) => {
-    if (sales >= LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales) {
+  // Détermination du niveau basée sur salesCount calculé (et non partner.totalSales)
+  const getLevelDetails = (count = 0) => {
+    if (count >= LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales) {
       const ui = LEVEL_UI[PARTNER_LEVELS.PREMIUM];
       return { 
-        name: PARTNER_LEVELS.PREMIUM,
-        color: ui.color, textColor: ui.textColor,
-        bgColor: ui.bgColor, borderColor: ui.borderColor,
-        next: 'Max', nextTarget: 0,
-        currentTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales,
-        icon: Trophy
+        name: PARTNER_LEVELS.PREMIUM, ...ui,
+        next: 'Max', nextTarget: 0, currentTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales, icon: Trophy
       };
     }
-    if (sales >= LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales) {
+    if (count >= LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales) {
       const ui = LEVEL_UI[PARTNER_LEVELS.ACTIF];
       return { 
-        name: PARTNER_LEVELS.ACTIF,
-        color: ui.color, textColor: ui.textColor,
-        bgColor: ui.bgColor, borderColor: ui.borderColor,
-        next: PARTNER_LEVELS.PREMIUM,
-        nextTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales,
-        currentTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales,
-        icon: Award
+        name: PARTNER_LEVELS.ACTIF, ...ui,
+        next: PARTNER_LEVELS.PREMIUM, nextTarget: LEVEL_RULES[PARTNER_LEVELS.PREMIUM].minSales, currentTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales, icon: Award
       };
     }
     const ui = LEVEL_UI[PARTNER_LEVELS.STANDARD];
     return { 
-      name: PARTNER_LEVELS.STANDARD,
-      color: ui.color, textColor: ui.textColor,
-      bgColor: ui.bgColor, borderColor: ui.borderColor,
-      next: PARTNER_LEVELS.ACTIF,
-      nextTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales,
-      currentTarget: 0,
-      icon: Star
+      name: PARTNER_LEVELS.STANDARD, ...ui,
+      next: PARTNER_LEVELS.ACTIF, nextTarget: LEVEL_RULES[PARTNER_LEVELS.ACTIF].minSales, currentTarget: 0, icon: Star
     };
   };
 
@@ -221,7 +266,7 @@ const PartnerDashboard = () => {
       <div className="flex justify-center items-center py-20">
         <div className="text-center">
           <Loader2 className="animate-spin text-purple-500 mx-auto mb-4" size={48}/>
-          <p className="text-slate-400">Chargement de vos données...</p>
+          <p className="text-slate-400">Synchronisation des données...</p>
         </div>
       </div>
     );
@@ -229,11 +274,12 @@ const PartnerDashboard = () => {
 
   if (!partner) return null;
 
-  const level = getLevelDetails(partner.totalSales);
-  const progressPercent = level.name === PARTNER_LEVELS.PREMIUM ? 100 : ((partner.totalSales - level.currentTarget) / (level.nextTarget - level.currentTarget)) * 100;
-  const salesRemaining = level.name === PARTNER_LEVELS.PREMIUM ? 0 : level.nextTarget - partner.totalSales;
-  const earningsChange = stats.weekEarnings > 0 ? ((stats.todayEarnings / (stats.weekEarnings / 7)) - 1) * 100 : 0;
-  const minWithdrawal = WITHDRAWAL_THRESHOLDS[partner.level] || 2000;
+  const level = getLevelDetails(metrics.salesCount);
+  const progressPercent = level.name === PARTNER_LEVELS.PREMIUM ? 100 : ((metrics.salesCount - level.currentTarget) / (level.nextTarget - level.currentTarget)) * 100;
+  const salesRemaining = level.name === PARTNER_LEVELS.PREMIUM ? 0 : level.nextTarget - metrics.salesCount;
+  // minWithdrawal basé sur le niveau calculé ou le niveau stocké (on préfère le calculé pour l'UI, mais le stocké est la vérité admin)
+  // Pour l'affichage, on utilise le niveau calculé.
+  const minWithdrawal = WITHDRAWAL_THRESHOLDS[level.name] || 2000;
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-8">
@@ -249,7 +295,7 @@ const PartnerDashboard = () => {
                 Bonjour, {partner.fullName?.split(' ')[0] || 'Partenaire'} 👋
               </h1>
               <p className="text-slate-400 text-sm sm:text-base">
-                Voici vos performances en temps réel
+                Vos performances en temps réel
               </p>
             </div>
 
@@ -259,13 +305,13 @@ const PartnerDashboard = () => {
             >
               <level.icon className={level.textColor} size={24} />
               <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Niveau</p>
+                <p className="text-xs text-slate-400 uppercase font-bold">Niveau (Calculé)</p>
                 <p className={`text-lg font-bold ${level.textColor}`}>{level.name}</p>
               </div>
             </motion.div>
           </div>
 
-          {/* Barre de progression (si pas Premium) */}
+          {/* Barre de progression */}
           {level.name !== PARTNER_LEVELS.PREMIUM && (
             <div className="bg-slate-950/50 backdrop-blur-md border border-slate-800 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -290,7 +336,7 @@ const PartnerDashboard = () => {
                 </motion.div>
               </div>
               <div className="flex justify-between mt-2 text-xs text-slate-500">
-                <span>{partner.totalSales || 0} ventes</span>
+                <span>{metrics.salesCount} ventes (Validées)</span>
                 <span>{level.nextTarget} ventes</span>
               </div>
             </div>
@@ -301,7 +347,7 @@ const PartnerDashboard = () => {
       {/* Cartes statistiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Solde disponible */}
+        {/* Solde disponible (Calculé) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -314,20 +360,21 @@ const PartnerDashboard = () => {
               <div className="bg-green-500/20 p-2.5 rounded-xl">
                 <DollarSign className="text-green-400" size={20} />
               </div>
-              <div className={`flex items-center gap-1 text-xs font-bold ${earningsChange > 0 ? 'text-green-400' : earningsChange < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                {earningsChange > 0 ? <ArrowUp size={14} /> : earningsChange < 0 ? <ArrowDown size={14} /> : <Minus size={14} />}
-                {Math.abs(earningsChange).toFixed(1)}%
-              </div>
+              {metrics.pendingEarnings > 0 && (
+                 <div className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/30">
+                   +{metrics.pendingEarnings.toLocaleString()} F en attente
+                 </div>
+              )}
             </div>
             <h3 className="text-2xl sm:text-3xl font-bold text-green-400 mb-1">
-              {partner.walletBalance?.toLocaleString() || 0} F
+              {metrics.walletBalance.toLocaleString()} F
             </h3>
             <p className="text-xs font-bold text-green-300/70 uppercase tracking-wide">Solde disponible</p>
             <p className="text-[10px] text-green-400/60 mt-1">Min. retrait: {minWithdrawal.toLocaleString()}F</p>
           </div>
         </motion.div>
 
-        {/* Gains totaux */}
+        {/* Gains totaux (Calculé) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -341,9 +388,9 @@ const PartnerDashboard = () => {
             </div>
           </div>
           <h3 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-1">
-            {partner.totalEarnings?.toLocaleString() || 0} F
+            {metrics.totalEarnings.toLocaleString()} F
           </h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Gains totaux</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Gains encaissés</p>
         </motion.div>
 
         {/* 30 derniers jours */}
@@ -360,12 +407,12 @@ const PartnerDashboard = () => {
             </div>
           </div>
           <h3 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-1">
-            {stats.monthEarnings?.toLocaleString() || 0} F
+            {stats.monthEarnings.toLocaleString()} F
           </h3>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">30 derniers jours</p>
         </motion.div>
 
-        {/* Ventes validées */}
+        {/* Ventes validées (Calculé) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -379,22 +426,21 @@ const PartnerDashboard = () => {
             </div>
           </div>
           <h3 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-1">
-            {partner.totalSales || 0}
+            {metrics.salesCount}
           </h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ventes validées</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ventes (Livré+)</p>
         </motion.div>
       </div>
 
       {/* Graphique des performances */}
       <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-3xl p-6 sm:p-8">
-        
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-100 mb-1 flex items-center gap-2">
               <BarChart3 className="text-purple-400" size={24} />
-              Évolution des performances
+              Vos gains confirmés
             </h2>
-            <p className="text-slate-400 text-sm">30 derniers jours</p>
+            <p className="text-slate-400 text-sm">Basé uniquement sur les commandes terminées</p>
           </div>
         </div>
 
@@ -408,33 +454,13 @@ const PartnerDashboard = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis 
-                dataKey="day" 
-                stroke="#64748B" 
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis 
-                stroke="#64748B" 
-                style={{ fontSize: '12px' }}
-              />
+              <XAxis dataKey="day" stroke="#64748B" style={{ fontSize: '12px' }}/>
+              <YAxis stroke="#64748B" style={{ fontSize: '12px' }}/>
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1E293B', 
-                  border: '1px solid #334155',
-                  borderRadius: '12px',
-                  padding: '12px'
-                }}
+                contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '12px' }}
                 labelStyle={{ color: '#F1F5F9' }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="earnings" 
-                stroke="#8B5CF6" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#earningsGradient)" 
-                name="Gains (FCFA)"
-              />
+              <Area type="monotone" dataKey="earnings" stroke="#8B5CF6" strokeWidth={2} fillOpacity={1} fill="url(#earningsGradient)" name="Gains (FCFA)"/>
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -497,10 +523,7 @@ const PartnerDashboard = () => {
           {stats.topProducts.length > 0 ? (
             <div className="space-y-3">
               {stats.topProducts.map((product, i) => (
-                <div 
-                  key={i}
-                  className="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-purple-500/30 transition-all"
-                >
+                <div key={i} className="bg-slate-950/50 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-purple-500/30 transition-all">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                       i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
@@ -531,22 +554,17 @@ const PartnerDashboard = () => {
       {/* Code promo */}
       <div className="bg-gradient-to-br from-purple-900/20 via-slate-900 to-pink-900/20 border-2 border-purple-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-        
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-            
             <div className="text-center lg:text-left">
               <h3 className="text-xl sm:text-2xl font-bold text-slate-100 mb-2 flex items-center justify-center lg:justify-start gap-2">
-                <Sparkles className="text-purple-400" size={24} />
                 Votre code promo unique
               </h3>
               <p className="text-slate-400 text-sm sm:text-base">
                 Partagez ce code. Le client a une réduction, vous une commission.
               </p>
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              
               <div 
                 onClick={copyToClipboard}
                 className="relative flex items-center justify-between gap-4 bg-slate-950/80 backdrop-blur-md border-2 border-dashed border-purple-500/50 rounded-2xl px-6 py-4 cursor-pointer hover:border-purple-400 hover:bg-slate-900/80 transition-all group"
@@ -555,22 +573,8 @@ const PartnerDashboard = () => {
                   {partner.promoCode}
                 </span>
                 <div className="text-slate-400 group-hover:text-purple-400 transition">
-                  {copied ? (
-                    <CheckCircle className="text-green-400" size={24}/>
-                  ) : (
-                    <Copy size={24}/>
-                  )}
+                  {copied ? <CheckCircle className="text-green-400" size={24}/> : <Copy size={24}/>}
                 </div>
-                
-                {copied && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="absolute -top-12 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-                  >
-                    Copié ! ✓
-                  </motion.div>
-                )}
               </div>
               
               <a 
@@ -589,7 +593,6 @@ const PartnerDashboard = () => {
 
       {/* Liens vers Sales et Wallet */}
       <div className="grid sm:grid-cols-2 gap-4">
-        
         <a href="/partner/sales">
           <motion.div 
             whileHover={{ scale: 1.02 }}

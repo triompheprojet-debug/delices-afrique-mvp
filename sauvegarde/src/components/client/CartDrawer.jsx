@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - CartDrawer
+ * Délices d'Afrique - CartDrawer
  * Panier latéral modernisé
  * ========================================
  */

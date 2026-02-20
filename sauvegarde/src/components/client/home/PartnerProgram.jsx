@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DÉLICES D'AFRIQUE - PartnerProgram
+ * Délices d'Afrique - PartnerProgram
  * Section majeure programme partenaire
  * ========================================
  */
